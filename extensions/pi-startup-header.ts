@@ -16,7 +16,7 @@ const LOGO_LINES = [
   "████╔═══████║",
   "████║   ████║",
   "████████╬═══████╗",
-  "████████║   ████║ ",
+  "████████║   ████║",
   "████╔═══╝   ████║",
   "████║       ████║",
   "╚═══╝       ╚═══╝",
@@ -181,7 +181,7 @@ function sampleGradientColor(palette: Rgb[], position: number): Rgb {
 
 function renderGradientText(text: string, palette: Rgb[], phase: number): string {
   const characters = [...text];
-  const span = Math.max(characters.length - 1, 1);
+  const span = Math.max(LOGO_BLOCK_WIDTH - 1, 1);
 
   return characters
     .map((character, index) => {
