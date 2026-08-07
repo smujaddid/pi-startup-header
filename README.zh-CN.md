@@ -38,15 +38,64 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 既然 [Pi 的官网主页](https://pi.dev/) 设计让人印象深刻，我们为什么不把它搬进终端呢？
 
-`pi-startup-header` 只做一件事：把会话开始时默认的顶部 header 替换成 Pi 风格的渐变 ASCII Logo 和官网标语。Logo 和标语的取色完全基于当前主题，无需额外配置，就能得到协调的视觉效果。
+`pi-startup-header` 只做一件事：把会话开始时默认的顶部 header 替换成 Pi 风格的渐变 ASCII Logo 和官网标语。
+
+默认情况下，Logo 和标语的取色完全基于当前主题，无需额外配置，就能得到协调的视觉效果。
 
 从启动 Pi 的那一刻起，界面就会有一点不一样。
+
+## 配置
+
+如需全局覆盖 header 默认取色，请创建：
+
+```text
+~/.pi/agent/pi-startup-header.json
+```
+
+使用自定义 Pi agent 目录时，配置文件位于对应目录。
+
+配置文件格式：
+
+```json
+{
+  "general": {
+    "logoGradientBase": "accent",
+    "textBase": "accent",
+    "textHighlight": "mdLink"
+  },
+  "themeOverrides": [
+    {
+      "theme": "my-dark-theme",
+      "logoGradientBase": "#7aa2f7",
+      "textHighlight": "success"
+    }
+  ]
+}
+```
+
+每个颜色可填写以下三类值之一：
+
+- Pi 的前景 `ThemeColor`，例如 `"accent"`、`"mdLink"`、`"success"`；
+- 6 位 RGB Hex 值，例如 `"#7aa2f7"`；
+- `0` 至 `255` 的 xterm 256 色调色板索引，例如 `117`。
+
+每个颜色字段独立按优先级解析：
+
+- `themeOverrides` 中 `theme` 与当前主题名完全匹配（区分大小写）的覆盖项优先于 `general`，主题覆盖中省略的字段继承 `general`；
+- 无命中的覆盖项时使用 `general` 配置，`general` 中省略的字段继承内置默认值。
+- 内置默认值中，Logo 渐变和普通标语文字使用 `accent`，高亮文字使用 `mdLink`。
+
+编辑配置文件后执行 `/reload` 即可生效。JSON 或配置值无效时，插件会在启动时显示警告，并回退到默认配置。
 
 ## 预览
 
 一张图胜过千言万语：
 
 ![Pi Startup Header 预览图](https://fastly.jsdelivr.net/gh/EnderLiquid/pi-startup-header@main/assets/preview.png)
+
+## 依赖
+
+本插件需要 Pi 0.84.0 或更高版本。
 
 ## 许可证
 
