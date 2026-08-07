@@ -1,10 +1,8 @@
-import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import type { Theme } from "@earendil-works/pi-coding-agent";
+import { paintRgb, type HeaderColor, type Rgb } from "./header-color.ts";
 import {
-  isHexRgb,
   resolveHeaderColorSettings,
   type EffectiveHeaderColorSettings,
-  type HeaderColor,
-  type Rgb,
   type StartupHeaderConfig,
 } from "./header-config.ts";
 
@@ -13,7 +11,6 @@ type StyledPart = {
   styled: string;
 };
 
-const ANSI_RESET = "\x1b[0m";
 const ANSI_PATTERN =
   /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[a-zA-Z\d]*)*)?\u0007)|(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))/g;
 
@@ -41,25 +38,6 @@ const PALETTE_STEPS = 24;
 const PALETTE_MAX_DARKEN = 0.18;
 const PALETTE_MAX_LIGHTEN = 0.18;
 const LOGO_ROW_PHASE_STEP = 0.12;
-
-const ANSI_16_RGB_TABLE: Rgb[] = [
-  [0, 0, 0],
-  [128, 0, 0],
-  [0, 128, 0],
-  [128, 128, 0],
-  [0, 0, 128],
-  [128, 0, 128],
-  [0, 128, 128],
-  [192, 192, 192],
-  [128, 128, 128],
-  [255, 0, 0],
-  [0, 255, 0],
-  [255, 255, 0],
-  [0, 0, 255],
-  [255, 0, 255],
-  [0, 255, 255],
-  [255, 255, 255],
-];
 
 function stripAnsi(text: string): string {
   return text.replace(ANSI_PATTERN, "");
@@ -101,98 +79,8 @@ function lightenRgb(rgb: Rgb, amount: number): Rgb {
   ];
 }
 
-function applyTruecolor(rgb: Rgb, text: string): string {
-  const [red, green, blue] = rgb;
-  return `\x1b[38;2;${red};${green};${blue}m${text}${ANSI_RESET}`;
-}
-
-function ansi16ToRgb(index: number): Rgb {
-  return ANSI_16_RGB_TABLE[index] ?? [255, 255, 255];
-}
-
-export function ansi256ToRgb(index: number): Rgb {
-  if (index < 16) return ansi16ToRgb(index);
-
-  if (index >= 232) {
-    const gray = 8 + (index - 232) * 10;
-    return [gray, gray, gray];
-  }
-
-  const cubeIndex = index - 16;
-  const redIndex = Math.floor(cubeIndex / 36);
-  const greenIndex = Math.floor((cubeIndex % 36) / 6);
-  const blueIndex = cubeIndex % 6;
-  const values = [0, 95, 135, 175, 215, 255];
-
-  return [values[redIndex]!, values[greenIndex]!, values[blueIndex]!];
-}
-
-function parseTruecolorAnsi(ansi: string): Rgb | undefined {
-  const match = ansi.match(/38;2;(\d+);(\d+);(\d+)/);
-  if (!match) return undefined;
-
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
-}
-
-function parseAnsi256Foreground(ansi: string): Rgb | undefined {
-  const match = ansi.match(/38;5;(\d+)/);
-  if (!match) return undefined;
-
-  return ansi256ToRgb(Number(match[1]));
-}
-
-function parseAnsi16Foreground(ansi: string): Rgb | undefined {
-  const normalMatch = ansi.match(/(?:\[|;)(3[0-7])(?:;|m)/);
-  if (normalMatch) {
-    return ansi16ToRgb(Number(normalMatch[1]) - 30);
-  }
-
-  const brightMatch = ansi.match(/(?:\[|;)(9[0-7])(?:;|m)/);
-  if (brightMatch) {
-    return ansi16ToRgb(Number(brightMatch[1]) - 90 + 8);
-  }
-
-  return undefined;
-}
-
-function parseForegroundRgbFromAnsi(ansi: string): Rgb | undefined {
-  return parseTruecolorAnsi(ansi) ?? parseAnsi256Foreground(ansi) ?? parseAnsi16Foreground(ansi);
-}
-
-export function parseHexRgb(hex: string): Rgb {
-  return [
-    Number.parseInt(hex.slice(1, 3), 16),
-    Number.parseInt(hex.slice(3, 5), 16),
-    Number.parseInt(hex.slice(5, 7), 16),
-  ];
-}
-
-function resolveHeaderColorRgb(theme: Theme, color: HeaderColor, fallback: Rgb): Rgb {
-  if (typeof color === "number") {
-    return ansi256ToRgb(color);
-  }
-
-  if (isHexRgb(color)) {
-    return parseHexRgb(color);
-  }
-
-  return parseForegroundRgbFromAnsi(theme.getFgAnsi(color as ThemeColor)) ?? fallback;
-}
-
 export function resolveLogoGradientBaseRgb(theme: Theme, color: HeaderColor): Rgb {
-  return resolveHeaderColorRgb(theme, color, FALLBACK_LOGO_GRADIENT_BASE_RGB);
-}
-
-export function applyConfiguredTextColor(theme: Theme, color: HeaderColor, text: string): string {
-  if (typeof color === "number") {
-    return applyTruecolor(ansi256ToRgb(color), text);
-  }
-
-  if (isHexRgb(color)) {
-    return applyTruecolor(parseHexRgb(color), text);
-  }
-
-  return theme.fg(color as ThemeColor, text);
+  return color.toRgb(theme) ?? FALLBACK_LOGO_GRADIENT_BASE_RGB;
 }
 
 function buildGradientPalette(base: Rgb): Rgb[] {
@@ -228,7 +116,7 @@ function renderLogoGradientText(text: string, palette: Rgb[], phase: number): st
     .map((character, index) => {
       if (character === " ") return character;
       const color = sampleGradientColor(palette, getLogoGradientPosition(index, phase));
-      return applyTruecolor(color, character);
+      return paintRgb(color, character);
     })
     .join("");
 }
@@ -275,7 +163,7 @@ function renderTaglineLines(
     [
       {
         raw: TAGLINE_LINE_1,
-        styled: applyConfiguredTextColor(theme, colors.textBase, TAGLINE_LINE_1),
+        styled: colors.textBase.paint(theme, TAGLINE_LINE_1),
       },
     ],
     width,
@@ -285,17 +173,15 @@ function renderTaglineLines(
     [
       {
         raw: TAGLINE_LINE_2_PREFIX,
-        styled: applyConfiguredTextColor(theme, colors.textBase, TAGLINE_LINE_2_PREFIX),
+        styled: colors.textBase.paint(theme, TAGLINE_LINE_2_PREFIX),
       },
       {
         raw: TAGLINE_LINE_2_HIGHLIGHT,
-        styled: theme.bold(
-          applyConfiguredTextColor(theme, colors.textHighlight, TAGLINE_LINE_2_HIGHLIGHT),
-        ),
+        styled: theme.bold(colors.textHighlight.paint(theme, TAGLINE_LINE_2_HIGHLIGHT)),
       },
       {
         raw: TAGLINE_LINE_2_SUFFIX,
-        styled: applyConfiguredTextColor(theme, colors.textBase, TAGLINE_LINE_2_SUFFIX),
+        styled: colors.textBase.paint(theme, TAGLINE_LINE_2_SUFFIX),
       },
     ],
     width,

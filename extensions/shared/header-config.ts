@@ -1,15 +1,17 @@
 import { readFile } from "node:fs/promises";
-import type { ThemeColor } from "@earendil-works/pi-coding-agent";
+import {
+  HeaderColor,
+  type HeaderColorConfigValue,
+} from "./header-color.ts";
 
-export type Rgb = [number, number, number];
-type HexRgb = `#${string}`;
+const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as const;
+const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
+const CONFIGURATION_KEYS = ["general", "themeOverrides"] as const;
 
-export type HeaderColor = ThemeColor | HexRgb | number;
-export type HeaderColorSettings = {
-  logoGradientBase?: HeaderColor;
-  textBase?: HeaderColor;
-  textHighlight?: HeaderColor;
-};
+type HeaderColorKey = (typeof HEADER_COLOR_KEYS)[number];
+
+export type HeaderColorConfig = Partial<Record<HeaderColorKey, HeaderColorConfigValue>>;
+type HeaderColorSettings = Partial<Record<HeaderColorKey, HeaderColor>>;
 export type EffectiveHeaderColorSettings = Required<HeaderColorSettings>;
 type ThemeOverride = HeaderColorSettings & {
   theme: string;
@@ -19,73 +21,20 @@ export type StartupHeaderConfig = {
   themeOverrides?: ThemeOverride[];
 };
 
-const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as const;
-const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
-const CONFIGURATION_KEYS = ["general", "themeOverrides"] as const;
-const HEX_RGB_PATTERN = /^#[0-9a-fA-F]{6}$/;
-
 export const CONFIGURATION_WARNING =
   "Failed to load pi-startup-header configuration. Using default colors.";
 
-export const DEFAULT_HEADER_COLORS = {
+const DEFAULT_HEADER_COLOR_CONFIG = {
   logoGradientBase: "accent",
   textBase: "accent",
   textHighlight: "mdLink",
+} as const satisfies Required<HeaderColorConfig>;
+
+export const DEFAULT_HEADER_COLORS = {
+  logoGradientBase: HeaderColor.fromThemeColor(DEFAULT_HEADER_COLOR_CONFIG.logoGradientBase),
+  textBase: HeaderColor.fromThemeColor(DEFAULT_HEADER_COLOR_CONFIG.textBase),
+  textHighlight: HeaderColor.fromThemeColor(DEFAULT_HEADER_COLOR_CONFIG.textHighlight),
 } as const satisfies EffectiveHeaderColorSettings;
-
-export const THEME_COLOR_VALUES = [
-  "accent",
-  "border",
-  "borderAccent",
-  "borderMuted",
-  "success",
-  "error",
-  "warning",
-  "muted",
-  "dim",
-  "text",
-  "thinkingText",
-  "userMessageText",
-  "customMessageText",
-  "customMessageLabel",
-  "toolTitle",
-  "toolOutput",
-  "mdHeading",
-  "mdLink",
-  "mdLinkUrl",
-  "mdCode",
-  "mdCodeBlock",
-  "mdCodeBlockBorder",
-  "mdQuote",
-  "mdQuoteBorder",
-  "mdHr",
-  "mdListBullet",
-  "toolDiffAdded",
-  "toolDiffRemoved",
-  "toolDiffContext",
-  "syntaxComment",
-  "syntaxKeyword",
-  "syntaxFunction",
-  "syntaxVariable",
-  "syntaxString",
-  "syntaxNumber",
-  "syntaxType",
-  "syntaxOperator",
-  "syntaxPunctuation",
-  "thinkingOff",
-  "thinkingMinimal",
-  "thinkingLow",
-  "thinkingMedium",
-  "thinkingHigh",
-  "thinkingXhigh",
-  "thinkingMax",
-  "bashMode",
-] as const satisfies readonly ThemeColor[];
-
-type AssertNever<T extends never> = T;
-type MissingThemeColors = AssertNever<Exclude<ThemeColor, (typeof THEME_COLOR_VALUES)[number]>>;
-
-const THEME_COLOR_SET = new Set<string>(THEME_COLOR_VALUES);
 
 export const EMPTY_STARTUP_HEADER_CONFIG: StartupHeaderConfig = {};
 
@@ -113,26 +62,6 @@ function expectRecord(value: unknown, path: string): Record<string, unknown> {
   return value;
 }
 
-export function isHexRgb(value: unknown): value is HexRgb {
-  return typeof value === "string" && HEX_RGB_PATTERN.test(value);
-}
-
-export function isThemeColor(value: unknown): value is ThemeColor {
-  return typeof value === "string" && THEME_COLOR_SET.has(value);
-}
-
-function parseHeaderColor(value: unknown, path: string): HeaderColor {
-  if (isThemeColor(value) || isHexRgb(value)) {
-    return value;
-  }
-
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 255) {
-    return value;
-  }
-
-  throw new Error(`${path} must be a ThemeColor, #RRGGBB value, or integer from 0 to 255`);
-}
-
 function parseHeaderColorSettings(value: unknown, path: string): HeaderColorSettings {
   const settings = expectRecord(value, path);
   assertKnownKeys(settings, HEADER_COLOR_KEYS, path);
@@ -140,7 +69,7 @@ function parseHeaderColorSettings(value: unknown, path: string): HeaderColorSett
   const result: HeaderColorSettings = {};
   for (const key of HEADER_COLOR_KEYS) {
     if (Object.hasOwn(settings, key)) {
-      result[key] = parseHeaderColor(settings[key], `${path}.${key}`);
+      result[key] = HeaderColor.parse(settings[key], `${path}.${key}`);
     }
   }
 
@@ -159,7 +88,7 @@ function parseThemeOverride(value: unknown, index: number): ThemeOverride {
   const colors: HeaderColorSettings = {};
   for (const key of HEADER_COLOR_KEYS) {
     if (Object.hasOwn(override, key)) {
-      colors[key] = parseHeaderColor(override[key], `${path}.${key}`);
+      colors[key] = HeaderColor.parse(override[key], `${path}.${key}`);
     }
   }
 

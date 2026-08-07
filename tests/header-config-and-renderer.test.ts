@@ -4,11 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
+import { HeaderColor } from "../extensions/shared/header-color.ts";
 import {
   DEFAULT_HEADER_COLORS,
   EMPTY_STARTUP_HEADER_CONFIG,
-  THEME_COLOR_VALUES,
-  isThemeColor,
   loadStartupHeaderConfig,
   parseStartupHeaderConfig,
   resolveHeaderColorSettings,
@@ -17,10 +16,7 @@ import {
   FALLBACK_LOGO_GRADIENT_BASE_RGB,
   LOGO_BLOCK_WIDTH,
   LOGO_LINES,
-  ansi256ToRgb,
-  applyConfiguredTextColor,
   getLogoGradientPosition,
-  parseHexRgb,
   resolveLogoGradientBaseRgb,
 } from "../extensions/shared/header-renderer.ts";
 
@@ -43,10 +39,12 @@ function createTheme(
 }
 
 test("未配置时使用既有的三种默认 ThemeColor", () => {
-  assert.deepEqual(
-    resolveHeaderColorSettings(EMPTY_STARTUP_HEADER_CONFIG, "test-theme"),
-    DEFAULT_HEADER_COLORS,
-  );
+  const theme = createTheme();
+  const colors = resolveHeaderColorSettings(EMPTY_STARTUP_HEADER_CONFIG, "test-theme");
+
+  assert.equal(colors.logoGradientBase, DEFAULT_HEADER_COLORS.logoGradientBase);
+  assert.equal(colors.textBase.paint(theme, "text"), "<accent>text</accent>");
+  assert.equal(colors.textHighlight.paint(theme, "text"), "<mdLink>text</mdLink>");
 });
 
 test("不存在配置文件时静默使用默认配置", async () => {
@@ -70,33 +68,29 @@ test("general 与主题专属配置按字段合并", () => {
       },
     ],
   });
+  const theme = createTheme();
+  const matched = resolveHeaderColorSettings(config, "test-theme");
+  const unmatched = resolveHeaderColorSettings(config, "other-theme");
 
-  assert.deepEqual(resolveHeaderColorSettings(config, "test-theme"), {
-    logoGradientBase: "thinkingMax",
-    textBase: "#112233",
-    textHighlight: "mdHeading",
-  });
-  assert.deepEqual(resolveHeaderColorSettings(config, "other-theme"), {
-    logoGradientBase: "success",
-    textBase: "#112233",
-    textHighlight: 117,
-  });
-  assert.deepEqual(resolveHeaderColorSettings(config, undefined), {
-    logoGradientBase: "success",
-    textBase: "#112233",
-    textHighlight: 117,
-  });
+  assert.equal(matched.logoGradientBase.paint(theme, "text"), "<thinkingMax>text</thinkingMax>");
+  assert.equal(matched.textBase.paint(theme, "text"), "\x1b[38;2;17;34;51mtext\x1b[0m");
+  assert.equal(matched.textHighlight.paint(theme, "text"), "<mdHeading>text</mdHeading>");
+  assert.equal(unmatched.logoGradientBase.paint(theme, "text"), "<success>text</success>");
+  assert.deepEqual(unmatched.textHighlight.toRgb(theme), [135, 215, 255]);
+  assert.equal(resolveHeaderColorSettings(config, undefined).logoGradientBase.paint(theme, "text"), "<success>text</success>");
 });
 
-test("支持新增的 thinkingMax ThemeColor", () => {
-  assert.ok(THEME_COLOR_VALUES.includes("thinkingMax"));
-  assert.ok(isThemeColor("thinkingMax"));
-  assert.equal(isThemeColor("selectedBg"), false);
+test("HeaderColor 接受新增的 thinkingMax ThemeColor", () => {
+  assert.doesNotThrow(() => HeaderColor.parse("thinkingMax", "color"));
+  assert.throws(() => HeaderColor.parse("selectedBg", "color"));
 
   const config = parseStartupHeaderConfig({
     general: { textHighlight: "thinkingMax" },
   });
-  assert.equal(resolveHeaderColorSettings(config, "test-theme").textHighlight, "thinkingMax");
+  assert.equal(
+    resolveHeaderColorSettings(config, "test-theme").textHighlight.paint(createTheme(), "text"),
+    "<thinkingMax>text</thinkingMax>",
+  );
 });
 
 test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
@@ -121,35 +115,46 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
   }
 });
 
-test("Hex 与 256 色输入会解析为预期 RGB", () => {
-  assert.deepEqual(parseHexRgb("#12AbEf"), [18, 171, 239]);
-  assert.deepEqual(ansi256ToRgb(39), [0, 175, 255]);
-  assert.deepEqual(ansi256ToRgb(255), [238, 238, 238]);
+test("HeaderColor 在解析时统一转换 Hex 与 256 色输入", () => {
+  const theme = createTheme();
+
+  assert.deepEqual(HeaderColor.parse("#12AbEf", "color").toRgb(theme), [18, 171, 239]);
+  assert.deepEqual(HeaderColor.parse(39, "color").toRgb(theme), [0, 175, 255]);
+  assert.deepEqual(HeaderColor.parse(255, "color").toRgb(theme), [238, 238, 238]);
 });
 
 test("Logo base 保留 ThemeColor ANSI 解析失败时的 fallback", () => {
   const resolvableTheme = createTheme({ accent: "\x1b[38;2;12;34;56m" });
   const unresolvedTheme = createTheme();
 
-  assert.deepEqual(resolveLogoGradientBaseRgb(resolvableTheme, "accent"), [12, 34, 56]);
-  assert.deepEqual(resolveLogoGradientBaseRgb(resolvableTheme, "#abcdef"), [171, 205, 239]);
-  assert.deepEqual(resolveLogoGradientBaseRgb(resolvableTheme, 39), [0, 175, 255]);
   assert.deepEqual(
-    resolveLogoGradientBaseRgb(unresolvedTheme, "accent"),
+    resolveLogoGradientBaseRgb(resolvableTheme, HeaderColor.parse("accent", "color")),
+    [12, 34, 56],
+  );
+  assert.deepEqual(
+    resolveLogoGradientBaseRgb(resolvableTheme, HeaderColor.parse("#abcdef", "color")),
+    [171, 205, 239],
+  );
+  assert.deepEqual(
+    resolveLogoGradientBaseRgb(resolvableTheme, HeaderColor.parse(39, "color")),
+    [0, 175, 255],
+  );
+  assert.deepEqual(
+    resolveLogoGradientBaseRgb(unresolvedTheme, HeaderColor.parse("accent", "color")),
     FALLBACK_LOGO_GRADIENT_BASE_RGB,
   );
 });
 
-test("文本 ThemeColor 保持 theme.fg 路径，直接颜色输出 truecolor ANSI", () => {
+test("HeaderColor 委托 ThemeColor 和直接 RGB 的文本渲染", () => {
   const theme = createTheme({ accent: "\x1b[38;2;12;34;56m" });
 
-  assert.equal(applyConfiguredTextColor(theme, "accent", "text"), "<accent>text</accent>");
+  assert.equal(HeaderColor.parse("accent", "color").paint(theme, "text"), "<accent>text</accent>");
   assert.equal(
-    applyConfiguredTextColor(theme, "#010203", "text"),
+    HeaderColor.parse("#010203", "color").paint(theme, "text"),
     "\x1b[38;2;1;2;3mtext\x1b[0m",
   );
   assert.equal(
-    applyConfiguredTextColor(theme, 39, "text"),
+    HeaderColor.parse(39, "color").paint(theme, "text"),
     "\x1b[38;2;0;175;255mtext\x1b[0m",
   );
 });
