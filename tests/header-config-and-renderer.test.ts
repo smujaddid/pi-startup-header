@@ -360,6 +360,18 @@ test("showTimeGreeting 控制问候语，并按本地小时生成文本", () => 
   assert.equal(getTimeGreeting(new Date(2026, 8, 17, 17, 59)), "Good afternoon!");
   assert.equal(getTimeGreeting(new Date(2026, 8, 17, 18, 0)), "Good evening!");
 
+  const referenceTime = new Date("2026-09-17T05:00:00.000Z");
+  assert.equal(getTimeGreeting(referenceTime, "America/New_York"), "Good night!");
+  assert.equal(getTimeGreeting(referenceTime, "Asia/Makassar"), "Good afternoon!");
+
+  const newYorkLines = renderHeaderLines(
+    300,
+    createTheme(),
+    parseStartupHeaderConfig({ timeZone: "America/New_York" }),
+    { piVersion: "0.85.1", now: referenceTime },
+  );
+  assert.ok(newYorkLines.some((line) => line.includes("Good night!")));
+
   assert.equal(resolveShowTimeGreeting(parseStartupHeaderConfig({})), true);
   assert.equal(resolveShowTimeGreeting(parseStartupHeaderConfig({ showTimeGreeting: false })), false);
   assert.equal(

@@ -249,8 +249,16 @@ export function formatLocalDateTime(
   return date.toLocaleString(locale, options);
 }
 
-export function getTimeGreeting(date = new Date()): string {
-  const hour = date.getHours();
+export function getTimeGreeting(date = new Date(), timeZone?: string): string {
+  const hour = timeZone
+    ? Number(
+        new Intl.DateTimeFormat("en-US", {
+          hour: "numeric",
+          hourCycle: "h23",
+          timeZone,
+        }).format(date),
+      )
+    : date.getHours();
   if (hour < 5) return "Good night!";
   if (hour < 12) return "Good morning!";
   if (hour < 18) return "Good afternoon!";
@@ -274,7 +282,8 @@ function renderHeaderInfoLines(
     ? welcomeMessage?.replaceAll("{name}", userName)
     : undefined;
   const now = runtimeInfo.now ?? new Date();
-  const timeGreeting = getTimeGreeting(now);
+  const timeZone = runtimeInfo.timeZone ?? resolveHeaderTimeZone(config);
+  const timeGreeting = getTimeGreeting(now, timeZone);
   const greetingLine = [welcomeText, resolveShowTimeGreeting(config) ? timeGreeting : undefined]
     .filter((text): text is string => Boolean(text))
     .join(" ");
@@ -336,7 +345,6 @@ function renderHeaderInfoLines(
     );
   }
 
-  const timeZone = runtimeInfo.timeZone ?? resolveHeaderTimeZone(config);
   const localDateTime = formatLocalDateTime(
     now,
     runtimeInfo.locale ?? textSettings.locale,
