@@ -5,24 +5,37 @@ import {
 } from "./header-color.ts";
 
 const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as const;
+const HEADER_TEXT_KEYS = ["userName", "welcomeMessage", "locale"] as const;
 const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
-const CONFIGURATION_KEYS = ["general", "themeOverrides"] as const;
+const GENERAL_CONFIGURATION_KEYS = [...HEADER_COLOR_KEYS, ...HEADER_TEXT_KEYS] as const;
+const CONFIGURATION_KEYS = ["general", "themeOverrides", ...HEADER_TEXT_KEYS] as const;
 
 type HeaderColorKey = (typeof HEADER_COLOR_KEYS)[number];
+type HeaderTextKey = (typeof HEADER_TEXT_KEYS)[number];
 
 export type HeaderColorConfig = Partial<Record<HeaderColorKey, HeaderColorConfigValue>>;
 type HeaderColorSettings = Partial<Record<HeaderColorKey, HeaderColor>>;
+type HeaderTextSettings = Partial<Record<HeaderTextKey, string>>;
+type GeneralHeaderSettings = HeaderColorSettings & HeaderTextSettings;
 export type EffectiveHeaderColorSettings = Required<HeaderColorSettings>;
+export type EffectiveHeaderTextSettings = HeaderTextSettings;
 type ThemeOverride = HeaderColorSettings & {
   theme: string;
 };
 export type StartupHeaderConfig = {
-  general?: HeaderColorSettings;
+  /** Color and text settings shared by all themes. */
+  general?: GeneralHeaderSettings;
+  /** Top-level text settings override values in `general`. */
+  userName?: string;
+  welcomeMessage?: string;
+  locale?: string;
   themeOverrides?: ThemeOverride[];
 };
 
 export const CONFIGURATION_WARNING =
-  "Failed to load pi-startup-header configuration. Using default colors.";
+  "Failed to load pi-startup-header configuration. Using default header settings.";
+
+export const DEFAULT_WELCOME_MESSAGE = "Welcome, {name}!";
 
 const DEFAULT_HEADER_COLOR_CONFIG = {
   logoGradientBase: "accent",
@@ -62,14 +75,46 @@ function expectRecord(value: unknown, path: string): Record<string, unknown> {
   return value;
 }
 
-function parseHeaderColorSettings(value: unknown, path: string): HeaderColorSettings {
-  const settings = expectRecord(value, path);
-  assertKnownKeys(settings, HEADER_COLOR_KEYS, path);
+function parseTextSetting(value: unknown, path: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`${path} must be a non-empty string`);
+  }
 
-  const result: HeaderColorSettings = {};
+  if (value.includes("\n") || value.includes("\r")) {
+    throw new Error(`${path} must be a single-line string`);
+  }
+
+  return value.trim();
+}
+
+function parseLocaleSetting(value: unknown, path: string): string {
+  const locale = parseTextSetting(value, path);
+
+  try {
+    new Intl.DateTimeFormat(locale);
+  } catch {
+    throw new Error(`${path} must be a valid BCP 47 locale`);
+  }
+
+  return locale;
+}
+
+function parseGeneralSettings(value: unknown, path: string): GeneralHeaderSettings {
+  const settings = expectRecord(value, path);
+  assertKnownKeys(settings, GENERAL_CONFIGURATION_KEYS, path);
+
+  const result: GeneralHeaderSettings = {};
   for (const key of HEADER_COLOR_KEYS) {
     if (Object.hasOwn(settings, key)) {
       result[key] = HeaderColor.parse(settings[key], `${path}.${key}`);
+    }
+  }
+  for (const key of HEADER_TEXT_KEYS) {
+    if (Object.hasOwn(settings, key)) {
+      result[key] =
+        key === "locale"
+          ? parseLocaleSetting(settings[key], `${path}.${key}`)
+          : parseTextSetting(settings[key], `${path}.${key}`);
     }
   }
 
@@ -102,7 +147,17 @@ export function parseStartupHeaderConfig(value: unknown): StartupHeaderConfig {
   const result: StartupHeaderConfig = {};
 
   if (Object.hasOwn(config, "general")) {
-    result.general = parseHeaderColorSettings(config.general, "general");
+    result.general = parseGeneralSettings(config.general, "general");
+  }
+
+  for (const key of HEADER_TEXT_KEYS) {
+    if (Object.hasOwn(config, key)) {
+      const path = `configuration.${key}`;
+      result[key] =
+        key === "locale"
+          ? parseLocaleSetting(config[key], path)
+          : parseTextSetting(config[key], path);
+    }
   }
 
   if (Object.hasOwn(config, "themeOverrides")) {
@@ -167,5 +222,16 @@ export function resolveHeaderColorSettings(
       themeOverride?.textHighlight ??
       config.general?.textHighlight ??
       DEFAULT_HEADER_COLORS.textHighlight,
+  };
+}
+
+export function resolveHeaderTextSettings(
+  config: StartupHeaderConfig,
+): EffectiveHeaderTextSettings {
+  return {
+    userName: config.userName ?? config.general?.userName,
+    welcomeMessage:
+      config.welcomeMessage ?? config.general?.welcomeMessage ?? DEFAULT_WELCOME_MESSAGE,
+    locale: config.locale ?? config.general?.locale,
   };
 }

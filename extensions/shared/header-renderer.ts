@@ -2,6 +2,7 @@ import type { Theme } from "@earendil-works/pi-coding-agent";
 import { paintRgb, type HeaderColor, type Rgb } from "./header-color.ts";
 import {
   resolveHeaderColorSettings,
+  resolveHeaderTextSettings,
   type EffectiveHeaderColorSettings,
   type StartupHeaderConfig,
 } from "./header-config.ts";
@@ -9,6 +10,19 @@ import {
 type StyledPart = {
   raw: string;
   styled: string;
+};
+
+export type HeaderRuntimeInfo = {
+  piVersion: string;
+  provider?: string;
+  model?: string;
+  thinkingLevel?: string;
+  userName?: string;
+  welcomeMessage?: string;
+  /** Date used for the clock; defaults to the current local date and time. */
+  now?: Date;
+  /** Optional locale override for deterministic rendering or user preference. */
+  locale?: string;
 };
 
 const ANSI_PATTERN =
@@ -30,6 +44,7 @@ const TAGLINE_LINE_1 = "There are many agent harnesses,";
 const TAGLINE_LINE_2_PREFIX = "but this one is ";
 const TAGLINE_LINE_2_HIGHLIGHT = "yours";
 const TAGLINE_LINE_2_SUFFIX = ".";
+const UNKNOWN_VALUE = "unknown";
 
 export const FALLBACK_LOGO_GRADIENT_BASE_RGB: Rgb = [80, 160, 255];
 export const LOGO_BLOCK_WIDTH = Math.max(...LOGO_LINES.map((line) => [...line].length));
@@ -190,14 +205,120 @@ function renderTaglineLines(
   return [line1, line2];
 }
 
+export function formatLocalDateTime(date = new Date(), locale?: string): string {
+  return date.toLocaleString(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function renderHeaderInfoLines(
+  width: number,
+  theme: Theme,
+  colors: EffectiveHeaderColorSettings,
+  config: StartupHeaderConfig,
+  runtimeInfo: HeaderRuntimeInfo,
+): string[] {
+  const textSettings = resolveHeaderTextSettings(config);
+  const provider = runtimeInfo.provider ?? UNKNOWN_VALUE;
+  const model = runtimeInfo.model ?? UNKNOWN_VALUE;
+  const thinkingLevel = runtimeInfo.thinkingLevel ?? UNKNOWN_VALUE;
+  const userName = runtimeInfo.userName ?? textSettings.userName;
+  const welcomeMessage = runtimeInfo.welcomeMessage ?? textSettings.welcomeMessage;
+  const welcomeText = userName
+    ? welcomeMessage?.replaceAll("{name}", userName)
+    : undefined;
+
+  const lines = [
+    createCenteredStyledLine(
+      [
+        {
+          raw: `pi v${runtimeInfo.piVersion}`,
+          styled: theme.bold(colors.textHighlight.paint(theme, `pi v${runtimeInfo.piVersion}`)),
+        },
+        {
+          raw: " · provider: ",
+          styled: colors.textBase.paint(theme, " · provider: "),
+        },
+        {
+          raw: provider,
+          styled: colors.textHighlight.paint(theme, provider),
+        },
+      ],
+      width,
+    ),
+    createCenteredStyledLine(
+      [
+        {
+          raw: "model: ",
+          styled: colors.textBase.paint(theme, "model: "),
+        },
+        {
+          raw: model,
+          styled: colors.textHighlight.paint(theme, model),
+        },
+        {
+          raw: " · thinking: ",
+          styled: colors.textBase.paint(theme, " · thinking: "),
+        },
+        {
+          raw: thinkingLevel,
+          styled: colors.textHighlight.paint(theme, thinkingLevel),
+        },
+      ],
+      width,
+    ),
+  ];
+
+  if (welcomeText) {
+    lines.push(
+      createCenteredStyledLine(
+        [
+          {
+            raw: welcomeText,
+            styled: colors.textBase.paint(theme, welcomeText),
+          },
+        ],
+        width,
+      ),
+    );
+  }
+
+  const localDateTime = formatLocalDateTime(
+    runtimeInfo.now,
+    runtimeInfo.locale ?? textSettings.locale,
+  );
+  lines.push(
+    createCenteredStyledLine(
+      [
+        {
+          raw: "local time: ",
+          styled: colors.textBase.paint(theme, "local time: "),
+        },
+        {
+          raw: localDateTime,
+          styled: colors.textHighlight.paint(theme, localDateTime),
+        },
+      ],
+      width,
+    ),
+  );
+
+  return lines;
+}
+
 export function renderHeaderLines(
   width: number,
   theme: Theme,
   config: StartupHeaderConfig,
+  runtimeInfo: HeaderRuntimeInfo = { piVersion: UNKNOWN_VALUE },
 ): string[] {
   const colors = resolveHeaderColorSettings(config, theme.name);
   const logoLines = renderLogoLines(width, theme, colors);
   const taglineLines = renderTaglineLines(width, theme, colors);
+  const infoLines = renderHeaderInfoLines(width, theme, colors, config, runtimeInfo);
 
-  return ["", ...logoLines, "", ...taglineLines, ""].map((line) => fitLineToWidth(line, width));
+  return ["", ...logoLines, "", ...infoLines, "", ...taglineLines, ""].map((line) =>
+    fitLineToWidth(line, width),
+  );
 }

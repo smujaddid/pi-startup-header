@@ -16,7 +16,7 @@ Pi can explain its own features and look up its docs. Ask it how to use or exten
 
 ## 概要
 
-`pi-startup-header` 用一个跟随主题的渐变 ASCII Header 替换 Pi 默认启动头部。
+`pi-startup-header` 用一个跟随主题的渐变 ASCII Header 替换 Pi 默认启动头部，并显示运行信息、可配置的欢迎语和本地时钟。
 
 ## 安装
 
@@ -32,13 +32,23 @@ pi install npm:pi-startup-header
 pi install git:github.com/EnderLiquid/pi-startup-header
 ```
 
+## 在 Pi 中配置
+
+使用 `/startup-header` 斜杠命令在 Pi 编辑器中打开配置。保存前会校验 JSON，修改会立即生效：
+
+```text
+/startup-header
+```
+
+使用 `/startup-header reset` 删除配置文件并恢复默认设置。
+
 ## 功能
 
 优秀的 AI 编码终端，理应搭配优雅的启动页头部——`pi-startup-header` 正是为此而生。
 
 既然 [Pi 的官网主页](https://pi.dev/) 设计让人印象深刻，我们为什么不把它搬进终端呢？
 
-`pi-startup-header` 只做一件事：把会话开始时默认的顶部 header 替换成 Pi 风格的渐变 ASCII Logo 和官网标语。
+`pi-startup-header` 会在会话开始时把默认顶部 header 替换成 Pi 风格的渐变 ASCII Logo、运行信息和官网标语。Header 会显示当前 Pi 版本、Provider、选中的模型、Thinking 等级、可配置的欢迎语，以及当前本地日期和时间。切换模型或 Thinking 等级时，信息也会更新。
 
 默认情况下，Logo 和标语的取色完全基于当前主题，无需额外配置，就能得到协调的视觉效果。
 
@@ -46,7 +56,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ## 配置
 
-如需全局覆盖 header 默认取色，请创建：
+如需全局覆盖 header 的颜色或文本，请创建：
 
 ```text
 ~/.pi/agent/pi-startup-header.json
@@ -58,6 +68,9 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ```json
 {
+  "userName": "Ada Lovelace",
+  "welcomeMessage": "Welcome, {name}!",
+  "locale": "en-GB",
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -73,6 +86,8 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 }
 ```
 
+`userName`、`welcomeMessage` 和 `locale` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。时区始终使用本地时区。文本配置也可以放在 `general` 中，顶层配置优先。
+
 每个颜色可填写以下三类值之一：
 
 - Pi 的前景 `ThemeColor`，例如 `"accent"`、`"mdLink"`、`"success"`；
@@ -85,7 +100,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 - 无命中的覆盖项时使用 `general` 配置，`general` 中省略的字段继承内置默认值。
 - 内置默认值中，Logo 渐变和普通标语文字使用 `accent`，高亮文字使用 `mdLink`。
 
-编辑配置文件后执行 `/reload` 即可生效。JSON 或配置值无效时，插件会在启动时显示警告，并回退到默认配置。
+编辑配置文件后执行 `/reload` 即可生效。JSON 或配置值无效时，插件会显示警告，并回退到内置默认配置。
 
 ## 预览
 

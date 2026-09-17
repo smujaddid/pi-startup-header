@@ -16,7 +16,7 @@ It fits Pi's signature restraint perfectly, but after a while, it can start to f
 
 ## Summary
 
-`pi-startup-header` replaces Pi's default startup header with a theme-aware gradient ASCII header.
+`pi-startup-header` replaces Pi's default startup header with a theme-aware gradient ASCII header that also shows runtime details, a configurable welcome, and the local clock.
 
 ## Install
 
@@ -32,13 +32,23 @@ pi install npm:pi-startup-header
 pi install git:github.com/EnderLiquid/pi-startup-header
 ```
 
+## Configure from Pi
+
+Use the `/startup-header` slash command to open the configuration in Pi's editor. The JSON is validated before it is saved, and changes apply immediately:
+
+```text
+/startup-header
+```
+
+Use `/startup-header reset` to remove the configuration file and restore defaults.
+
 ## What it does
 
 A great AI coding terminal deserves a better startup header — that is exactly what `pi-startup-header` is for.
 
 [Pi's official website](https://pi.dev/) already leaves a strong visual impression. Why not bring some of that feeling into the terminal?
 
-`pi-startup-header` does one thing: it replaces the default top header at session start with a Pi-style gradient ASCII logo and tagline.
+`pi-startup-header` replaces the default top header at session start with a Pi-style gradient ASCII logo, runtime details, and tagline. The header shows the running Pi version, provider, selected model, thinking level, a configurable welcome message, and the current local date and time. Model and thinking details are refreshed when they change.
 
 By default, the logo and tagline colors come entirely from your current Pi theme, so the result stays visually consistent without any extra configuration.
 
@@ -46,7 +56,7 @@ From the moment Pi starts, the interface feels just a little different.
 
 ## Configuration
 
-To globally override the header's default colors, create:
+To globally override the header's colors or text, create:
 
 ```text
 ~/.pi/agent/pi-startup-header.json
@@ -58,6 +68,9 @@ Configuration file format:
 
 ```json
 {
+  "userName": "Ada Lovelace",
+  "welcomeMessage": "Welcome, {name}!",
+  "locale": "en-GB",
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -73,6 +86,8 @@ Configuration file format:
 }
 ```
 
+`userName`, `welcomeMessage`, and `locale` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. The time zone is always the local time zone. Text settings can also be placed inside `general`; top-level values take precedence.
+
 Each color can use one of the following value types:
 
 - A Pi foreground `ThemeColor`, such as `"accent"`, `"mdLink"`, or `"success"`.
@@ -85,7 +100,7 @@ Each color field is resolved independently according to the following precedence
 - When no override matches, values from `general` are used; omitted `general` fields inherit the built-in defaults.
 - The built-in defaults use `accent` for the Logo gradient and normal tagline text, and `mdLink` for highlighted text.
 
-Run `/reload` after editing the configuration file to apply the change. If the JSON or configuration values are invalid, the plugin shows a warning at startup and falls back to the default configuration.
+Run `/reload` after editing the configuration file to apply the change. If the JSON or configuration values are invalid, the plugin shows a warning at startup and falls back to the built-in defaults.
 
 ## Preview
 

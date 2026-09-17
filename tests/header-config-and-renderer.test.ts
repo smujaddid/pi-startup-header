@@ -11,12 +11,15 @@ import {
   loadStartupHeaderConfig,
   parseStartupHeaderConfig,
   resolveHeaderColorSettings,
+  resolveHeaderTextSettings,
 } from "../extensions/shared/header-config.ts";
 import {
   FALLBACK_LOGO_GRADIENT_BASE_RGB,
   LOGO_BLOCK_WIDTH,
   LOGO_LINES,
+  formatLocalDateTime,
   getLogoGradientPosition,
+  renderHeaderLines,
   resolveLogoGradientBaseRgb,
 } from "../extensions/shared/header-renderer.ts";
 
@@ -102,6 +105,7 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { general: { textBase: "not-a-theme-variable" } },
     { general: { textBase: "" } },
     { general: { selectedBg: "accent" } },
+    { locale: "en_US" },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -164,4 +168,75 @@ test("Logo 渐变始终以最大行宽计算横向位置", () => {
   assert.equal(LOGO_BLOCK_WIDTH, Math.max(...LOGO_LINES.map((line) => [...line].length)));
   assert.equal(getLogoGradientPosition(12, 0), 0.75);
   assert.equal(getLogoGradientPosition(16, 0), 1);
+});
+
+test("欢迎语配置支持用户名和 {name} 占位符", () => {
+  const config = parseStartupHeaderConfig({
+    userName: "  Ada Lovelace  ",
+    welcomeMessage: "Hello, {name}.",
+  });
+
+  assert.deepEqual(resolveHeaderTextSettings(config), {
+    userName: "Ada Lovelace",
+    welcomeMessage: "Hello, {name}.",
+    locale: undefined,
+  });
+});
+
+test("欢迎语也可以放在 general 中，并拒绝空文本", () => {
+  const config = parseStartupHeaderConfig({
+    general: {
+      userName: "Grace",
+      welcomeMessage: "Welcome back, {name}!",
+    },
+  });
+
+  assert.deepEqual(resolveHeaderTextSettings(config), {
+    userName: "Grace",
+    welcomeMessage: "Welcome back, {name}!",
+    locale: undefined,
+  });
+  assert.throws(() => parseStartupHeaderConfig({ userName: "   " }));
+  assert.throws(() => parseStartupHeaderConfig({ welcomeMessage: "line 1\nline 2" }));
+});
+
+test("locale 配置控制日期格式，省略时使用系统 locale", () => {
+  const config = parseStartupHeaderConfig({ locale: "en-GB" });
+  const now = new Date("2026-09-17T01:30:00.000Z");
+  const lines = renderHeaderLines(300, createTheme(), config, {
+    piVersion: "0.85.1",
+    now,
+  });
+
+  assert.ok(lines.some((line) => line.includes(formatLocalDateTime(now, "en-GB"))));
+  assert.equal(resolveHeaderTextSettings(config).locale, "en-GB");
+});
+
+test("Header 显示 Pi 运行信息、欢迎语和本地时间", () => {
+  const theme = createTheme();
+  const config = parseStartupHeaderConfig({
+    userName: "Ada",
+    welcomeMessage: "Welcome, {name}!",
+  });
+  const now = new Date("2026-09-17T01:30:00.000Z");
+  const lines = renderHeaderLines(300, theme, config, {
+    piVersion: "0.85.1",
+    provider: "openai-codex",
+    model: "gpt-5.6-luna",
+    thinkingLevel: "medium",
+    now,
+    locale: "en-US",
+  });
+
+  assert.ok(lines.some((line) => line.includes("pi v0.85.1")));
+  assert.ok(lines.some((line) => line.includes("provider:") && line.includes("openai-codex")));
+  assert.ok(lines.some((line) => line.includes("model:") && line.includes("gpt-5.6-luna")));
+  assert.ok(lines.some((line) => line.includes("thinking:") && line.includes("medium")));
+  assert.ok(lines.some((line) => line.includes("Welcome, Ada!")));
+  assert.ok(
+    lines.some(
+      (line) =>
+        line.includes("local time:") && line.includes(formatLocalDateTime(now, "en-US")),
+    ),
+  );
 });
