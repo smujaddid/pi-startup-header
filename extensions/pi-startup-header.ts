@@ -24,8 +24,10 @@ import {
   parseStartupHeaderConfig,
   resolveHeaderTextSettings,
   resolveHeaderTimeZone,
+  resolveShowLabels,
   resolveShowTagline,
   resolveShowTimeGreeting,
+  resolveShowTimeZoneName,
   type StartupHeaderConfig,
 } from "./shared/header-config.ts";
 import { renderHeaderLines } from "./shared/header-renderer.ts";
@@ -45,6 +47,8 @@ type EditableSettingId =
   | "timeStyle"
   | "showTimeGreeting"
   | "showTagline"
+  | "showTimeZoneName"
+  | "showLabels"
   | ColorSettingId;
 
 const CONFIG_FILE_NAME = "pi-startup-header.json";
@@ -412,6 +416,20 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             currentValue: resolveShowTagline(parsedConfiguration) ? "enabled" : "disabled",
             values: ["enabled", "disabled"],
           },
+          {
+            id: "showTimeZoneName",
+            label: "Time zone name",
+            description: "Show the configured time zone in the time field label.",
+            currentValue: resolveShowTimeZoneName(parsedConfiguration) ? "enabled" : "disabled",
+            values: ["enabled", "disabled"],
+          },
+          {
+            id: "showLabels",
+            label: "Field labels",
+            description: "Show labels such as provider, model, thinking, and time.",
+            currentValue: resolveShowLabels(parsedConfiguration) ? "enabled" : "disabled",
+            values: ["enabled", "disabled"],
+          },
           ...COLOR_SETTING_IDS.map((id): SettingItem => ({
             id,
             label:
@@ -457,7 +475,10 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             const settingId = id as EditableSettingId;
             const settingValue = COLOR_SETTING_IDS.includes(settingId as ColorSettingId)
               ? parseColorInput(newValue)
-              : settingId === "showTimeGreeting" || settingId === "showTagline"
+              : settingId === "showTimeGreeting" ||
+                  settingId === "showTagline" ||
+                  settingId === "showTimeZoneName" ||
+                  settingId === "showLabels"
                 ? newValue === "enabled"
                 : (settingId === "userName" || settingId === "locale") && newValue.trim().length === 0
                   ? undefined
@@ -559,7 +580,12 @@ export default function piStartupHeader(pi: ExtensionAPI) {
           }
           if (id === "tagline") return taglineDisplayValue(draftConfiguration);
           if (id === "timeZone") return timeZoneDisplayValue(draftConfiguration);
-          if (id === "showTimeGreeting" || id === "showTagline") {
+          if (
+            id === "showTimeGreeting" ||
+            id === "showTagline" ||
+            id === "showTimeZoneName" ||
+            id === "showLabels"
+          ) {
             return value === true ? "enabled" : "disabled";
           }
           if (value === undefined) return SYSTEM_DEFAULT_LABEL;

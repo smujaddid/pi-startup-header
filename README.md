@@ -77,6 +77,8 @@ Configuration file format:
   "timeStyle": "long",
   "showTimeGreeting": true,
   "showTagline": true,
+  "showTimeZoneName": true,
+  "showLabels": true,
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -92,7 +94,7 @@ Configuration file format:
 }
 ```
 
-`userName`, `welcomeMessage`, `tagline`, `locale`, `dateStyle`, `timeStyle`, `timeZone`, `showTimeGreeting`, and `showTagline` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `tagline` replaces the default tagline text; an empty value falls back to the default two-line tagline. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. `timeZone` accepts an IANA time zone such as `UTC`, `Asia/Makassar`, or `America/New_York`; when omitted or empty, the local time zone is used. `showTimeGreeting` defaults to `true` and controls the local-time greeting (`Good morning!`, `Good afternoon!`, `Good evening!`, or `Good night!`). `showTagline` defaults to `true` and controls the tagline below the runtime information. Text and display settings can also be placed inside `general`; top-level values take precedence.
+`userName`, `welcomeMessage`, `tagline`, `locale`, `dateStyle`, `timeStyle`, `timeZone`, `showTimeGreeting`, `showTagline`, `showTimeZoneName`, and `showLabels` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `tagline` replaces the default tagline text; an empty value falls back to the default two-line tagline. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. `timeZone` accepts an IANA time zone such as `UTC`, `Asia/Makassar`, or `America/New_York`; when omitted or empty, the local time zone is used. `showTimeGreeting` defaults to `true` and controls the local-time greeting (`Good morning!`, `Good afternoon!`, `Good evening!`, or `Good night!`). `showTagline` defaults to `true` and controls the tagline below the runtime information. `showTimeZoneName` defaults to `true` and controls whether the configured time zone appears in the time field label. `showLabels` defaults to `true` and controls all runtime field labels together; it does not provide individual label toggles. Text and display settings can also be placed inside `general`; top-level values take precedence.
 
 Each color can use one of the following value types:
 

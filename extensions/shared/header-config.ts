@@ -9,7 +9,12 @@ const HEADER_TEXT_KEYS = ["userName", "welcomeMessage", "locale"] as const;
 const HEADER_TAGLINE_KEYS = ["tagline"] as const;
 const HEADER_DATE_TIME_KEYS = ["dateStyle", "timeStyle"] as const;
 const HEADER_TIME_ZONE_KEYS = ["timeZone"] as const;
-const HEADER_DISPLAY_KEYS = ["showTimeGreeting", "showTagline"] as const;
+const HEADER_DISPLAY_KEYS = [
+  "showTimeGreeting",
+  "showTagline",
+  "showTimeZoneName",
+  "showLabels",
+] as const;
 const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
 const GENERAL_CONFIGURATION_KEYS = [
   ...HEADER_COLOR_KEYS,
@@ -41,6 +46,8 @@ type HeaderTimeZoneKey = (typeof HEADER_TIME_ZONE_KEYS)[number];
 type HeaderDisplaySettings = {
   showTimeGreeting?: boolean;
   showTagline?: boolean;
+  showTimeZoneName?: boolean;
+  showLabels?: boolean;
 };
 
 export type HeaderColorConfig = Partial<Record<HeaderColorKey, HeaderColorConfigValue>>;
@@ -76,6 +83,10 @@ export type StartupHeaderConfig = {
   timeZone?: string;
   showTimeGreeting?: boolean;
   showTagline?: boolean;
+  /** Whether to include the configured time zone in the time field label. */
+  showTimeZoneName?: boolean;
+  /** Whether to show labels for runtime information fields. */
+  showLabels?: boolean;
   themeOverrides?: ThemeOverride[];
 };
 
@@ -89,6 +100,8 @@ export const DEFAULT_TIME_STYLE: DateTimeStyle = "long";
 export const DEFAULT_TIME_ZONE = "";
 export const DEFAULT_SHOW_TIME_GREETING = true;
 export const DEFAULT_SHOW_TAGLINE = true;
+export const DEFAULT_SHOW_TIME_ZONE_NAME = true;
+export const DEFAULT_SHOW_LABELS = true;
 
 const DEFAULT_HEADER_COLOR_CONFIG = {
   logoGradientBase: "accent",
@@ -386,6 +399,14 @@ export function resolveHeaderTimeZone(config: StartupHeaderConfig): string | und
 
 export function resolveShowTimeGreeting(config: StartupHeaderConfig): boolean {
   return config.showTimeGreeting ?? config.general?.showTimeGreeting ?? DEFAULT_SHOW_TIME_GREETING;
+}
+
+export function resolveShowTimeZoneName(config: StartupHeaderConfig): boolean {
+  return config.showTimeZoneName ?? config.general?.showTimeZoneName ?? DEFAULT_SHOW_TIME_ZONE_NAME;
+}
+
+export function resolveShowLabels(config: StartupHeaderConfig): boolean {
+  return config.showLabels ?? config.general?.showLabels ?? DEFAULT_SHOW_LABELS;
 }
 
 export function resolveShowTagline(config: StartupHeaderConfig): boolean {

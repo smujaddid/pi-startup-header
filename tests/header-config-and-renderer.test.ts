@@ -15,8 +15,10 @@ import {
   resolveHeaderTagline,
   resolveHeaderTextSettings,
   resolveHeaderTimeZone,
+  resolveShowLabels,
   resolveShowTagline,
   resolveShowTimeGreeting,
+  resolveShowTimeZoneName,
 } from "../extensions/shared/header-config.ts";
 import {
   FALLBACK_LOGO_GRADIENT_BASE_RGB,
@@ -124,6 +126,10 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { timeZone: 123 },
     { timeZone: "Not/AZone" },
     { general: { timeZone: "Not/AZone" } },
+    { showTimeZoneName: "true" },
+    { general: { showTimeZoneName: "true" } },
+    { showLabels: "true" },
+    { general: { showLabels: "true" } },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -293,6 +299,57 @@ test("timeZone 支持覆盖显示时区，空值使用本地时区", () => {
         line.includes(formatLocalDateTime(now, "en-US", "short", "short", "UTC")),
     ),
   );
+});
+
+test("显示选项控制时区名称和字段标签", () => {
+  const now = new Date("2026-09-17T01:30:00.000Z");
+  const baseConfig = parseStartupHeaderConfig({
+    locale: "en-US",
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "UTC",
+  });
+  const noTimeZoneNameConfig = parseStartupHeaderConfig({
+    ...baseConfig,
+    showTimeZoneName: false,
+  });
+  const noLabelsConfig = parseStartupHeaderConfig({
+    ...baseConfig,
+    showLabels: false,
+  });
+  const runtimeInfo = {
+    piVersion: "0.85.1",
+    provider: "openai-codex",
+    model: "gpt",
+    thinkingLevel: "medium",
+    now,
+  };
+
+  assert.equal(resolveShowTimeZoneName(parseStartupHeaderConfig({})), true);
+  assert.equal(resolveShowLabels(parseStartupHeaderConfig({})), true);
+  assert.equal(resolveShowTimeZoneName(noTimeZoneNameConfig), false);
+  assert.equal(resolveShowLabels(noLabelsConfig), false);
+
+  const withNameLines = renderHeaderLines(300, createTheme(), baseConfig, runtimeInfo);
+  const withoutNameLines = renderHeaderLines(
+    300,
+    createTheme(),
+    noTimeZoneNameConfig,
+    runtimeInfo,
+  );
+  const withoutLabelsLines = renderHeaderLines(300, createTheme(), noLabelsConfig, runtimeInfo);
+
+  assert.ok(withNameLines.some((line) => line.includes("time (UTC):")));
+  assert.ok(!withoutNameLines.some((line) => line.includes("time (UTC):")));
+  assert.ok(withoutNameLines.some((line) => line.includes("time:")));
+
+  assert.ok(!withoutLabelsLines.some((line) => line.includes("provider:")));
+  assert.ok(!withoutLabelsLines.some((line) => line.includes("model:")));
+  assert.ok(!withoutLabelsLines.some((line) => line.includes("thinking:")));
+  assert.ok(!withoutLabelsLines.some((line) => line.includes("time (UTC):")));
+  assert.ok(!withoutLabelsLines.some((line) => line.includes("time:")));
+  assert.ok(withoutLabelsLines.some((line) => line.includes("openai-codex")));
+  assert.ok(withoutLabelsLines.some((line) => line.includes("gpt")));
 });
 
 test("showTimeGreeting 控制问候语，并按本地小时生成文本", () => {

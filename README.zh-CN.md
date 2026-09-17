@@ -77,6 +77,8 @@ pi install git:github.com/EnderLiquid/pi-startup-header
   "timeStyle": "long",
   "showTimeGreeting": true,
   "showTagline": true,
+  "showTimeZoneName": true,
+  "showLabels": true,
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -92,7 +94,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 }
 ```
 
-`userName`、`welcomeMessage`、`tagline`、`locale`、`dateStyle`、`timeStyle`、`timeZone`、`showTimeGreeting` 和 `showTagline` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`tagline` 可以替换默认标语；为空时回退到默认的两行标语。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。`dateStyle` 和 `timeStyle` 可使用 `full`、`long`、`medium` 或 `short`，默认分别为 `full` 和 `long`。`timeZone` 可使用 `UTC`、`Asia/Makassar` 或 `America/New_York` 等 IANA 时区；省略或为空时使用本地时区。`showTimeGreeting` 默认为 `true`，用于控制根据本地时间显示的问候语（`Good morning!`、`Good afternoon!`、`Good evening!` 或 `Good night!`）。`showTagline` 默认为 `true`，用于控制运行信息下方的标语。文本和显示配置也可以放在 `general` 中，顶层配置优先。
+`userName`、`welcomeMessage`、`tagline`、`locale`、`dateStyle`、`timeStyle`、`timeZone`、`showTimeGreeting`、`showTagline`、`showTimeZoneName` 和 `showLabels` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`tagline` 可以替换默认标语；为空时回退到默认的两行标语。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。`dateStyle` 和 `timeStyle` 可使用 `full`、`long`、`medium` 或 `short`，默认分别为 `full` 和 `long`。`timeZone` 可使用 `UTC`、`Asia/Makassar` 或 `America/New_York` 等 IANA 时区；省略或为空时使用本地时区。`showTimeGreeting` 默认为 `true`，用于控制根据本地时间显示的问候语（`Good morning!`、`Good afternoon!`、`Good evening!` 或 `Good night!`）。`showTagline` 默认为 `true`，用于控制运行信息下方的标语。`showTimeZoneName` 默认为 `true`，用于控制时间字段标签中是否显示配置的时区名称。`showLabels` 默认为 `true`，用于统一控制所有运行信息字段标签，不提供单独的标签开关。文本和显示配置也可以放在 `general` 中，顶层配置优先。
 
 每个颜色可填写以下三类值之一：
 

@@ -8,8 +8,10 @@ import {
   resolveHeaderTextSettings,
   resolveHeaderTagline,
   resolveHeaderTimeZone,
+  resolveShowLabels,
   resolveShowTagline,
   resolveShowTimeGreeting,
+  resolveShowTimeZoneName,
   type DateTimeStyle,
   type EffectiveHeaderColorSettings,
   type StartupHeaderConfig,
@@ -276,6 +278,7 @@ function renderHeaderInfoLines(
   const greetingLine = [welcomeText, resolveShowTimeGreeting(config) ? timeGreeting : undefined]
     .filter((text): text is string => Boolean(text))
     .join(" ");
+  const showLabels = resolveShowLabels(config);
 
   const lines = [
     createCenteredStyledLine(
@@ -285,8 +288,8 @@ function renderHeaderInfoLines(
           styled: theme.bold(colors.textHighlight.paint(theme, `pi v${runtimeInfo.piVersion}`)),
         },
         {
-          raw: " · provider: ",
-          styled: colors.textBase.paint(theme, " · provider: "),
+          raw: showLabels ? " · provider: " : " · ",
+          styled: colors.textBase.paint(theme, showLabels ? " · provider: " : " · "),
         },
         {
           raw: provider,
@@ -298,16 +301,16 @@ function renderHeaderInfoLines(
     createCenteredStyledLine(
       [
         {
-          raw: "model: ",
-          styled: colors.textBase.paint(theme, "model: "),
+          raw: showLabels ? "model: " : "",
+          styled: colors.textBase.paint(theme, showLabels ? "model: " : ""),
         },
         {
           raw: model,
           styled: colors.textHighlight.paint(theme, model),
         },
         {
-          raw: " · thinking: ",
-          styled: colors.textBase.paint(theme, " · thinking: "),
+          raw: showLabels ? " · thinking: " : " · ",
+          styled: colors.textBase.paint(theme, showLabels ? " · thinking: " : " · "),
         },
         {
           raw: thinkingLevel,
@@ -341,7 +344,13 @@ function renderHeaderInfoLines(
     runtimeInfo.timeStyle ?? textSettings.timeStyle,
     timeZone,
   );
-  const timeLabel = timeZone ? `time (${timeZone}): ` : "local time: ";
+  const timeLabel = showLabels
+    ? timeZone && resolveShowTimeZoneName(config)
+      ? `time (${timeZone}): `
+      : timeZone
+        ? "time: "
+        : "local time: "
+    : "";
   lines.push(
     createCenteredStyledLine(
       [
