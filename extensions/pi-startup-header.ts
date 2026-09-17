@@ -23,6 +23,7 @@ import {
   loadStartupHeaderConfig,
   parseStartupHeaderConfig,
   resolveHeaderTextSettings,
+  resolveShowTimeGreeting,
   type StartupHeaderConfig,
 } from "./shared/header-config.ts";
 import { renderHeaderLines } from "./shared/header-renderer.ts";
@@ -36,6 +37,7 @@ type EditableSettingId =
   | "locale"
   | "dateStyle"
   | "timeStyle"
+  | "showTimeGreeting"
   | ColorSettingId;
 
 const CONFIG_FILE_NAME = "pi-startup-header.json";
@@ -93,12 +95,16 @@ function setGeneralSetting(
 function updateRawSetting(
   rawConfiguration: Record<string, unknown>,
   id: EditableSettingId,
-  value: string | number | undefined,
+  value: string | number | boolean | undefined,
 ): Record<string, unknown> {
   const nextConfiguration = { ...rawConfiguration };
 
   if (COLOR_SETTING_IDS.includes(id as ColorSettingId)) {
-    setGeneralSetting(nextConfiguration, id as ColorSettingId, value);
+    setGeneralSetting(
+      nextConfiguration,
+      id as ColorSettingId,
+      value as string | number | undefined,
+    );
   } else if (value === undefined) {
     delete nextConfiguration[id];
     const general = isRecord(nextConfiguration.general) ? { ...nextConfiguration.general } : {};
@@ -335,6 +341,13 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             currentValue: textSettings.timeStyle ?? "long",
             values: ["full", "long", "medium", "short"],
           },
+          {
+            id: "showTimeGreeting",
+            label: "Time greeting",
+            description: "Show Good morning!, Good afternoon!, or Good evening! based on local time.",
+            currentValue: resolveShowTimeGreeting(parsedConfiguration) ? "enabled" : "disabled",
+            values: ["enabled", "disabled"],
+          },
           ...COLOR_SETTING_IDS.map((id): SettingItem => ({
             id,
             label:
@@ -380,9 +393,11 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             const settingId = id as EditableSettingId;
             const settingValue = COLOR_SETTING_IDS.includes(settingId as ColorSettingId)
               ? parseColorInput(newValue)
-              : (settingId === "userName" || settingId === "locale") && newValue.trim().length === 0
-                ? undefined
-                : newValue;
+              : settingId === "showTimeGreeting"
+                ? newValue === "enabled"
+                : (settingId === "userName" || settingId === "locale") && newValue.trim().length === 0
+                  ? undefined
+                  : newValue;
             const displayValue = applySetting(settingId, settingValue);
             if (displayValue === undefined) {
               settingsList.updateValue(id, previousValues.get(id) ?? newValue);
@@ -443,7 +458,7 @@ export default function piStartupHeader(pi: ExtensionAPI) {
 
         function applySetting(
           id: EditableSettingId,
-          value: string | number | undefined,
+          value: string | number | boolean | undefined,
         ): string | undefined {
           const nextConfiguration = updateRawSetting(draftConfiguration, id, value);
           let nextParsedConfiguration: StartupHeaderConfig;
@@ -471,6 +486,7 @@ export default function piStartupHeader(pi: ExtensionAPI) {
           if (COLOR_SETTING_IDS.includes(id as ColorSettingId)) {
             return colorDisplayValue(draftConfiguration, id as ColorSettingId);
           }
+          if (id === "showTimeGreeting") return value === true ? "enabled" : "disabled";
           if (value === undefined) return SYSTEM_DEFAULT_LABEL;
           return String(value);
         }

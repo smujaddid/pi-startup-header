@@ -16,7 +16,7 @@ It fits Pi's signature restraint perfectly, but after a while, it can start to f
 
 ## Summary
 
-`pi-startup-header` replaces Pi's default startup header with a theme-aware gradient ASCII header that also shows runtime details, a configurable welcome, and the local clock.
+`pi-startup-header` replaces Pi's default startup header with a theme-aware gradient ASCII header that also shows runtime details, a time-aware greeting, a configurable welcome, and the local clock.
 
 ## Install
 
@@ -34,7 +34,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ## Configure from Pi
 
-Use the `/startup-header` slash command to open an interactive settings list, similar to Pi's `/settings` command. Use Enter/Space to cycle date and time styles; Enter on a text or color setting opens a single-line editor. Valid changes are saved and applied immediately:
+Use the `/startup-header` slash command to open an interactive settings list, similar to Pi's `/settings` command. Use Enter/Space to cycle date and time styles or toggle the time greeting; Enter on a text or color setting opens a single-line editor. Valid changes are saved and applied immediately:
 
 ```text
 /startup-header
@@ -48,7 +48,7 @@ A great AI coding terminal deserves a better startup header — that is exactly 
 
 [Pi's official website](https://pi.dev/) already leaves a strong visual impression. Why not bring some of that feeling into the terminal?
 
-`pi-startup-header` replaces the default top header at session start with a Pi-style gradient ASCII logo, runtime details, and tagline. The header shows the running Pi version, provider, selected model, thinking level, a configurable welcome message, and the current local date and time. Model and thinking details are refreshed when they change.
+`pi-startup-header` replaces the default top header at session start with a Pi-style gradient ASCII logo, runtime details, and tagline. The header shows the running Pi version, provider, selected model, thinking level, a time-aware greeting, a configurable welcome message, and the current local date and time. Model and thinking details are refreshed when they change.
 
 By default, the logo and tagline colors come entirely from your current Pi theme, so the result stays visually consistent without any extra configuration.
 
@@ -73,6 +73,7 @@ Configuration file format:
   "locale": "en-GB",
   "dateStyle": "full",
   "timeStyle": "long",
+  "showTimeGreeting": true,
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -88,7 +89,7 @@ Configuration file format:
 }
 ```
 
-`userName`, `welcomeMessage`, `locale`, `dateStyle`, and `timeStyle` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. The time zone is always the local time zone. Text settings can also be placed inside `general`; top-level values take precedence.
+`userName`, `welcomeMessage`, `locale`, `dateStyle`, `timeStyle`, and `showTimeGreeting` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. `showTimeGreeting` defaults to `true` and controls the local-time greeting (`Good morning!`, `Good afternoon!`, `Good evening!`, or `Good night!`). The time zone is always the local time zone. Text settings can also be placed inside `general`; top-level values take precedence.
 
 Each color can use one of the following value types:
 

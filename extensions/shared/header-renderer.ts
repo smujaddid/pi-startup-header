@@ -5,6 +5,7 @@ import {
   DEFAULT_TIME_STYLE,
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
+  resolveShowTimeGreeting,
   type DateTimeStyle,
   type EffectiveHeaderColorSettings,
   type StartupHeaderConfig,
@@ -221,6 +222,14 @@ export function formatLocalDateTime(
   return date.toLocaleString(locale, { dateStyle, timeStyle });
 }
 
+export function getTimeGreeting(date = new Date()): string {
+  const hour = date.getHours();
+  if (hour < 5) return "Good night!";
+  if (hour < 12) return "Good morning!";
+  if (hour < 18) return "Good afternoon!";
+  return "Good evening!";
+}
+
 function renderHeaderInfoLines(
   width: number,
   theme: Theme,
@@ -237,6 +246,11 @@ function renderHeaderInfoLines(
   const welcomeText = userName
     ? welcomeMessage?.replaceAll("{name}", userName)
     : undefined;
+  const now = runtimeInfo.now ?? new Date();
+  const timeGreeting = getTimeGreeting(now);
+  const greetingLine = [welcomeText, resolveShowTimeGreeting(config) ? timeGreeting : undefined]
+    .filter((text): text is string => Boolean(text))
+    .join(" ");
 
   const lines = [
     createCenteredStyledLine(
@@ -279,14 +293,14 @@ function renderHeaderInfoLines(
     ),
   ];
 
-  if (welcomeText) {
+  if (greetingLine) {
     lines.push("");
     lines.push(
       createCenteredStyledLine(
         [
           {
-            raw: welcomeText,
-            styled: colors.textBase.paint(theme, welcomeText),
+            raw: greetingLine,
+            styled: colors.textBase.paint(theme, greetingLine),
           },
         ],
         width,
@@ -295,7 +309,7 @@ function renderHeaderInfoLines(
   }
 
   const localDateTime = formatLocalDateTime(
-    runtimeInfo.now,
+    now,
     runtimeInfo.locale ?? textSettings.locale,
     runtimeInfo.dateStyle ?? textSettings.dateStyle,
     runtimeInfo.timeStyle ?? textSettings.timeStyle,

@@ -7,17 +7,20 @@ import {
 const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as const;
 const HEADER_TEXT_KEYS = ["userName", "welcomeMessage", "locale"] as const;
 const HEADER_DATE_TIME_KEYS = ["dateStyle", "timeStyle"] as const;
+const HEADER_DISPLAY_KEYS = ["showTimeGreeting"] as const;
 const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
 const GENERAL_CONFIGURATION_KEYS = [
   ...HEADER_COLOR_KEYS,
   ...HEADER_TEXT_KEYS,
   ...HEADER_DATE_TIME_KEYS,
+  ...HEADER_DISPLAY_KEYS,
 ] as const;
 const CONFIGURATION_KEYS = [
   "general",
   "themeOverrides",
   ...HEADER_TEXT_KEYS,
   ...HEADER_DATE_TIME_KEYS,
+  ...HEADER_DISPLAY_KEYS,
 ] as const;
 
 const DATE_TIME_STYLE_VALUES = ["full", "long", "medium", "short"] as const;
@@ -27,11 +30,19 @@ type HeaderColorKey = (typeof HEADER_COLOR_KEYS)[number];
 type HeaderTextKey = (typeof HEADER_TEXT_KEYS)[number];
 type HeaderDateTimeKey = (typeof HEADER_DATE_TIME_KEYS)[number];
 
+type HeaderDisplaySettings = {
+  showTimeGreeting?: boolean;
+};
+
 export type HeaderColorConfig = Partial<Record<HeaderColorKey, HeaderColorConfigValue>>;
 type HeaderColorSettings = Partial<Record<HeaderColorKey, HeaderColor>>;
 type HeaderTextSettings = Partial<Record<HeaderTextKey, string>>;
 type HeaderDateTimeSettings = Partial<Record<HeaderDateTimeKey, DateTimeStyle>>;
-type GeneralHeaderSettings = HeaderColorSettings & HeaderTextSettings & HeaderDateTimeSettings;
+type GeneralHeaderSettings =
+  & HeaderColorSettings
+  & HeaderTextSettings
+  & HeaderDateTimeSettings
+  & HeaderDisplaySettings;
 export type EffectiveHeaderColorSettings = Required<HeaderColorSettings>;
 export type EffectiveHeaderTextSettings = HeaderTextSettings & HeaderDateTimeSettings;
 type ThemeOverride = HeaderColorSettings & {
@@ -46,6 +57,7 @@ export type StartupHeaderConfig = {
   locale?: string;
   dateStyle?: DateTimeStyle;
   timeStyle?: DateTimeStyle;
+  showTimeGreeting?: boolean;
   themeOverrides?: ThemeOverride[];
 };
 
@@ -55,6 +67,7 @@ export const CONFIGURATION_WARNING =
 export const DEFAULT_WELCOME_MESSAGE = "Welcome, {name}!";
 export const DEFAULT_DATE_STYLE: DateTimeStyle = "full";
 export const DEFAULT_TIME_STYLE: DateTimeStyle = "long";
+export const DEFAULT_SHOW_TIME_GREETING = true;
 
 const DEFAULT_HEADER_COLOR_CONFIG = {
   logoGradientBase: "accent",
@@ -149,6 +162,12 @@ function parseGeneralSettings(value: unknown, path: string): GeneralHeaderSettin
       result[key] = parseDateTimeStyle(settings[key], `${path}.${key}`);
     }
   }
+  if (Object.hasOwn(settings, "showTimeGreeting")) {
+    if (typeof settings.showTimeGreeting !== "boolean") {
+      throw new Error(`${path}.showTimeGreeting must be a boolean`);
+    }
+    result.showTimeGreeting = settings.showTimeGreeting;
+  }
 
   return result;
 }
@@ -196,6 +215,12 @@ export function parseStartupHeaderConfig(value: unknown): StartupHeaderConfig {
       const path = `configuration.${key}`;
       result[key] = parseDateTimeStyle(config[key], path);
     }
+  }
+  if (Object.hasOwn(config, "showTimeGreeting")) {
+    if (typeof config.showTimeGreeting !== "boolean") {
+      throw new Error("configuration.showTimeGreeting must be a boolean");
+    }
+    result.showTimeGreeting = config.showTimeGreeting;
   }
 
   if (Object.hasOwn(config, "themeOverrides")) {
@@ -274,4 +299,8 @@ export function resolveHeaderTextSettings(
     dateStyle: config.dateStyle ?? config.general?.dateStyle ?? DEFAULT_DATE_STYLE,
     timeStyle: config.timeStyle ?? config.general?.timeStyle ?? DEFAULT_TIME_STYLE,
   };
+}
+
+export function resolveShowTimeGreeting(config: StartupHeaderConfig): boolean {
+  return config.showTimeGreeting ?? config.general?.showTimeGreeting ?? DEFAULT_SHOW_TIME_GREETING;
 }

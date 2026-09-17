@@ -12,6 +12,7 @@ import {
   parseStartupHeaderConfig,
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
+  resolveShowTimeGreeting,
 } from "../extensions/shared/header-config.ts";
 import {
   FALLBACK_LOGO_GRADIENT_BASE_RGB,
@@ -19,6 +20,7 @@ import {
   LOGO_LINES,
   formatLocalDateTime,
   getLogoGradientPosition,
+  getTimeGreeting,
   renderHeaderLines,
   resolveLogoGradientBaseRgb,
 } from "../extensions/shared/header-renderer.ts";
@@ -108,6 +110,8 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { locale: "en_US" },
     { dateStyle: "invalid" },
     { timeStyle: "invalid" },
+    { showTimeGreeting: "true" },
+    { general: { showTimeGreeting: "true" } },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -206,6 +210,37 @@ test("欢迎语也可以放在 general 中，并拒绝空文本", () => {
   assert.throws(() => parseStartupHeaderConfig({ welcomeMessage: "line 1\nline 2" }));
 });
 
+test("showTimeGreeting 控制问候语，并按本地小时生成文本", () => {
+  assert.equal(getTimeGreeting(new Date(2026, 8, 17, 4, 0)), "Good night!");
+  assert.equal(getTimeGreeting(new Date(2026, 8, 17, 5, 0)), "Good morning!");
+  assert.equal(getTimeGreeting(new Date(2026, 8, 17, 11, 59)), "Good morning!");
+  assert.equal(getTimeGreeting(new Date(2026, 8, 17, 12, 0)), "Good afternoon!");
+  assert.equal(getTimeGreeting(new Date(2026, 8, 17, 17, 59)), "Good afternoon!");
+  assert.equal(getTimeGreeting(new Date(2026, 8, 17, 18, 0)), "Good evening!");
+
+  assert.equal(resolveShowTimeGreeting(parseStartupHeaderConfig({})), true);
+  assert.equal(resolveShowTimeGreeting(parseStartupHeaderConfig({ showTimeGreeting: false })), false);
+  assert.equal(
+    resolveShowTimeGreeting(parseStartupHeaderConfig({ general: { showTimeGreeting: false } })),
+    false,
+  );
+
+  const now = new Date(2026, 8, 17, 9, 0);
+  const enabledLines = renderHeaderLines(300, createTheme(), parseStartupHeaderConfig({}), {
+    piVersion: "0.85.1",
+    now,
+  });
+  const disabledLines = renderHeaderLines(
+    300,
+    createTheme(),
+    parseStartupHeaderConfig({ showTimeGreeting: false }),
+    { piVersion: "0.85.1", now },
+  );
+
+  assert.ok(enabledLines.some((line) => line.includes("Good morning!")));
+  assert.ok(!disabledLines.some((line) => line.includes("Good morning!")));
+});
+
 test("locale 配置控制日期格式，省略时使用系统 locale", () => {
   const config = parseStartupHeaderConfig({ locale: "en-GB" });
   const now = new Date("2026-09-17T01:30:00.000Z");
@@ -247,7 +282,7 @@ test("Header 显示 Pi 运行信息、欢迎语和本地时间", () => {
     userName: "Ada",
     welcomeMessage: "Welcome, {name}!",
   });
-  const now = new Date("2026-09-17T01:30:00.000Z");
+  const now = new Date(2026, 8, 17, 9, 30);
   const lines = renderHeaderLines(300, theme, config, {
     piVersion: "0.85.1",
     provider: "openai-codex",
@@ -261,7 +296,9 @@ test("Header 显示 Pi 运行信息、欢迎语和本地时间", () => {
   assert.ok(lines.some((line) => line.includes("provider:") && line.includes("openai-codex")));
   assert.ok(lines.some((line) => line.includes("model:") && line.includes("gpt-5.6-luna")));
   assert.ok(lines.some((line) => line.includes("thinking:") && line.includes("medium")));
-  const welcomeLineIndex = lines.findIndex((line) => line.includes("Welcome, Ada!"));
+  const welcomeLineIndex = lines.findIndex((line) =>
+    line.includes(`Welcome, Ada! ${getTimeGreeting(now)}`),
+  );
   assert.notEqual(welcomeLineIndex, -1);
   assert.equal(lines[welcomeLineIndex - 1], "");
   assert.equal(

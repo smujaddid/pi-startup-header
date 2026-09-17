@@ -34,7 +34,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ## 在 Pi 中配置
 
-使用 `/startup-header` 斜杠命令打开类似 Pi `/settings` 的交互式设置列表。日期和时间样式可用 Enter/Space 循环切换；在文本或颜色设置上按 Enter 可打开单行编辑器。有效修改会立即保存并应用：
+使用 `/startup-header` 斜杠命令打开类似 Pi `/settings` 的交互式设置列表。日期和时间样式及时间问候语可用 Enter/Space 循环切换；在文本或颜色设置上按 Enter 可打开单行编辑器。有效修改会立即保存并应用：
 
 ```text
 /startup-header
@@ -48,7 +48,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 既然 [Pi 的官网主页](https://pi.dev/) 设计让人印象深刻，我们为什么不把它搬进终端呢？
 
-`pi-startup-header` 会在会话开始时把默认顶部 header 替换成 Pi 风格的渐变 ASCII Logo、运行信息和官网标语。Header 会显示当前 Pi 版本、Provider、选中的模型、Thinking 等级、可配置的欢迎语，以及当前本地日期和时间。切换模型或 Thinking 等级时，信息也会更新。
+`pi-startup-header` 会在会话开始时把默认顶部 header 替换成 Pi 风格的渐变 ASCII Logo、运行信息和官网标语。Header 会显示当前 Pi 版本、Provider、选中的模型、Thinking 等级、根据本地时间变化的问候语、可配置的欢迎语，以及当前本地日期和时间。切换模型或 Thinking 等级时，信息也会更新。
 
 默认情况下，Logo 和标语的取色完全基于当前主题，无需额外配置，就能得到协调的视觉效果。
 
@@ -73,6 +73,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
   "locale": "en-GB",
   "dateStyle": "full",
   "timeStyle": "long",
+  "showTimeGreeting": true,
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -88,7 +89,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 }
 ```
 
-`userName`、`welcomeMessage`、`locale`、`dateStyle` 和 `timeStyle` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。`dateStyle` 和 `timeStyle` 可使用 `full`、`long`、`medium` 或 `short`，默认分别为 `full` 和 `long`。时区始终使用本地时区。文本配置也可以放在 `general` 中，顶层配置优先。
+`userName`、`welcomeMessage`、`locale`、`dateStyle`、`timeStyle` 和 `showTimeGreeting` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。`dateStyle` 和 `timeStyle` 可使用 `full`、`long`、`medium` 或 `short`，默认分别为 `full` 和 `long`。`showTimeGreeting` 默认为 `true`，用于控制根据本地时间显示的问候语（`Good morning!`、`Good afternoon!`、`Good evening!` 或 `Good night!`）。时区始终使用本地时区。文本配置也可以放在 `general` 中，顶层配置优先。
 
 每个颜色可填写以下三类值之一：
 
