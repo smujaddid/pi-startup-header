@@ -6,12 +6,14 @@ import {
 
 const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as const;
 const HEADER_TEXT_KEYS = ["userName", "welcomeMessage", "locale"] as const;
+const HEADER_TAGLINE_KEYS = ["tagline"] as const;
 const HEADER_DATE_TIME_KEYS = ["dateStyle", "timeStyle"] as const;
 const HEADER_DISPLAY_KEYS = ["showTimeGreeting", "showTagline"] as const;
 const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
 const GENERAL_CONFIGURATION_KEYS = [
   ...HEADER_COLOR_KEYS,
   ...HEADER_TEXT_KEYS,
+  ...HEADER_TAGLINE_KEYS,
   ...HEADER_DATE_TIME_KEYS,
   ...HEADER_DISPLAY_KEYS,
 ] as const;
@@ -19,6 +21,7 @@ const CONFIGURATION_KEYS = [
   "general",
   "themeOverrides",
   ...HEADER_TEXT_KEYS,
+  ...HEADER_TAGLINE_KEYS,
   ...HEADER_DATE_TIME_KEYS,
   ...HEADER_DISPLAY_KEYS,
 ] as const;
@@ -28,6 +31,7 @@ const DATE_TIME_STYLE_VALUES = ["full", "long", "medium", "short"] as const;
 export type DateTimeStyle = (typeof DATE_TIME_STYLE_VALUES)[number];
 type HeaderColorKey = (typeof HEADER_COLOR_KEYS)[number];
 type HeaderTextKey = (typeof HEADER_TEXT_KEYS)[number];
+type HeaderTaglineKey = (typeof HEADER_TAGLINE_KEYS)[number];
 type HeaderDateTimeKey = (typeof HEADER_DATE_TIME_KEYS)[number];
 
 type HeaderDisplaySettings = {
@@ -38,10 +42,12 @@ type HeaderDisplaySettings = {
 export type HeaderColorConfig = Partial<Record<HeaderColorKey, HeaderColorConfigValue>>;
 type HeaderColorSettings = Partial<Record<HeaderColorKey, HeaderColor>>;
 type HeaderTextSettings = Partial<Record<HeaderTextKey, string>>;
+type HeaderTaglineSettings = Partial<Record<HeaderTaglineKey, string>>;
 type HeaderDateTimeSettings = Partial<Record<HeaderDateTimeKey, DateTimeStyle>>;
 type GeneralHeaderSettings =
   & HeaderColorSettings
   & HeaderTextSettings
+  & HeaderTaglineSettings
   & HeaderDateTimeSettings
   & HeaderDisplaySettings;
 export type EffectiveHeaderColorSettings = Required<HeaderColorSettings>;
@@ -56,6 +62,8 @@ export type StartupHeaderConfig = {
   userName?: string;
   welcomeMessage?: string;
   locale?: string;
+  /** Empty values fall back to the built-in tagline. */
+  tagline?: string;
   dateStyle?: DateTimeStyle;
   timeStyle?: DateTimeStyle;
   showTimeGreeting?: boolean;
@@ -67,6 +75,7 @@ export const CONFIGURATION_WARNING =
   "Failed to load pi-startup-header configuration. Using default header settings.";
 
 export const DEFAULT_WELCOME_MESSAGE = "Welcome, {name}!";
+export const DEFAULT_TAGLINE = "There are many agent harnesses,\nbut this one is yours.";
 export const DEFAULT_DATE_STYLE: DateTimeStyle = "full";
 export const DEFAULT_TIME_STYLE: DateTimeStyle = "long";
 export const DEFAULT_SHOW_TIME_GREETING = true;
@@ -134,6 +143,17 @@ function parseLocaleSetting(value: unknown, path: string): string {
   return locale;
 }
 
+function parseTaglineSetting(value: unknown, path: string): string {
+  if (typeof value !== "string") {
+    throw new Error(`${path} must be a string`);
+  }
+  if (value.includes("\n") || value.includes("\r")) {
+    throw new Error(`${path} must be a single-line string`);
+  }
+
+  return value.trim();
+}
+
 function parseDateTimeStyle(value: unknown, path: string): DateTimeStyle {
   if (typeof value !== "string" || !DATE_TIME_STYLE_VALUES.includes(value as DateTimeStyle)) {
     throw new Error(`${path} must be one of: ${DATE_TIME_STYLE_VALUES.join(", ")}`);
@@ -158,6 +178,11 @@ function parseGeneralSettings(value: unknown, path: string): GeneralHeaderSettin
         key === "locale"
           ? parseLocaleSetting(settings[key], `${path}.${key}`)
           : parseTextSetting(settings[key], `${path}.${key}`);
+    }
+  }
+  for (const key of HEADER_TAGLINE_KEYS) {
+    if (Object.hasOwn(settings, key)) {
+      result[key] = parseTaglineSetting(settings[key], `${path}.${key}`);
     }
   }
   for (const key of HEADER_DATE_TIME_KEYS) {
@@ -213,6 +238,11 @@ export function parseStartupHeaderConfig(value: unknown): StartupHeaderConfig {
         key === "locale"
           ? parseLocaleSetting(config[key], path)
           : parseTextSetting(config[key], path);
+    }
+  }
+  for (const key of HEADER_TAGLINE_KEYS) {
+    if (Object.hasOwn(config, key)) {
+      result[key] = parseTaglineSetting(config[key], `configuration.${key}`);
     }
   }
   for (const key of HEADER_DATE_TIME_KEYS) {
@@ -306,6 +336,11 @@ export function resolveHeaderTextSettings(
     dateStyle: config.dateStyle ?? config.general?.dateStyle ?? DEFAULT_DATE_STYLE,
     timeStyle: config.timeStyle ?? config.general?.timeStyle ?? DEFAULT_TIME_STYLE,
   };
+}
+
+export function resolveHeaderTagline(config: StartupHeaderConfig): string {
+  const configuredTagline = config.tagline ?? config.general?.tagline;
+  return configuredTagline || DEFAULT_TAGLINE;
 }
 
 export function resolveShowTimeGreeting(config: StartupHeaderConfig): boolean {

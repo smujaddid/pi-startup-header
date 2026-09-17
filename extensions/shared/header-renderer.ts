@@ -2,9 +2,11 @@ import type { Theme } from "@earendil-works/pi-coding-agent";
 import { paintRgb, type HeaderColor, type Rgb } from "./header-color.ts";
 import {
   DEFAULT_DATE_STYLE,
+  DEFAULT_TAGLINE,
   DEFAULT_TIME_STYLE,
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
+  resolveHeaderTagline,
   resolveShowTagline,
   resolveShowTimeGreeting,
   type DateTimeStyle,
@@ -182,7 +184,22 @@ function renderTaglineLines(
   width: number,
   theme: Theme,
   colors: EffectiveHeaderColorSettings,
+  tagline: string,
 ): string[] {
+  if (tagline !== DEFAULT_TAGLINE) {
+    return tagline.split("\n").map((line) =>
+      createCenteredStyledLine(
+        [
+          {
+            raw: line,
+            styled: colors.textBase.paint(theme, line),
+          },
+        ],
+        width,
+      ),
+    );
+  }
+
   const line1 = createCenteredStyledLine(
     [
       {
@@ -343,7 +360,7 @@ export function renderHeaderLines(
   const colors = resolveHeaderColorSettings(config, theme.name);
   const logoLines = renderLogoLines(width, theme, colors);
   const taglineLines = resolveShowTagline(config)
-    ? renderTaglineLines(width, theme, colors)
+    ? renderTaglineLines(width, theme, colors, resolveHeaderTagline(config))
     : [];
   const infoLines = renderHeaderInfoLines(width, theme, colors, config, runtimeInfo);
   const taglineSeparator = taglineLines.length > 0 ? [""] : [];

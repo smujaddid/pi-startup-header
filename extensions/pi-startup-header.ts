@@ -30,12 +30,14 @@ import {
 import { renderHeaderLines } from "./shared/header-renderer.ts";
 
 const SYSTEM_DEFAULT_LABEL = "(system default)";
+const DEFAULT_VALUE_LABEL = "(default)";
 const COLOR_SETTING_IDS = ["logoGradientBase", "textBase", "textHighlight"] as const;
 type ColorSettingId = (typeof COLOR_SETTING_IDS)[number];
 type EditableSettingId =
   | "userName"
   | "welcomeMessage"
   | "locale"
+  | "tagline"
   | "dateStyle"
   | "timeStyle"
   | "showTimeGreeting"
@@ -136,6 +138,13 @@ function colorDisplayValue(
   if (typeof value === "string" || typeof value === "number") return String(value);
 
   return id === "textHighlight" ? "mdLink" : "accent";
+}
+
+function taglineDisplayValue(rawConfiguration: Record<string, unknown>): string {
+  const value = getRawSetting(rawConfiguration, "tagline");
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+
+  return DEFAULT_VALUE_LABEL;
 }
 
 class TextSettingSubmenu extends Container {
@@ -312,6 +321,24 @@ export default function piStartupHeader(pi: ExtensionAPI) {
               ),
           },
           {
+            id: "tagline",
+            label: "Tagline text",
+            description: "Text shown below the runtime information. Leave empty to use the default tagline.",
+            currentValue: taglineDisplayValue(draftConfiguration),
+            submenu: (_currentValue, done) =>
+              new TextSettingSubmenu(
+                theme,
+                "Tagline text",
+                "Enter a single-line tagline. Leave empty to use the default tagline.",
+                currentTextInputValue("tagline"),
+                (value) => {
+                  const submittedValue = validateSetting("tagline", value);
+                  if (submittedValue !== undefined) done(submittedValue);
+                },
+                () => done(undefined),
+              ),
+          },
+          {
             id: "locale",
             label: "Locale",
             description: "BCP 47 locale used for the local date and time.",
@@ -435,7 +462,14 @@ export default function piStartupHeader(pi: ExtensionAPI) {
           },
         };
 
-        function currentTextInputValue(id: "userName" | "welcomeMessage" | "locale"): string {
+        function currentTextInputValue(
+          id: "userName" | "welcomeMessage" | "locale" | "tagline",
+        ): string {
+          if (id === "tagline") {
+            const value = getRawSetting(draftConfiguration, "tagline");
+            return typeof value === "string" ? value.trim() : "";
+          }
+
           const currentSettings = resolveHeaderTextSettings(parsedConfiguration);
           if (id === "userName") return currentSettings.userName ?? getDefaultUserName() ?? "";
           if (id === "locale") return currentSettings.locale ?? "";
@@ -495,6 +529,7 @@ export default function piStartupHeader(pi: ExtensionAPI) {
           if (COLOR_SETTING_IDS.includes(id as ColorSettingId)) {
             return colorDisplayValue(draftConfiguration, id as ColorSettingId);
           }
+          if (id === "tagline") return taglineDisplayValue(draftConfiguration);
           if (id === "showTimeGreeting" || id === "showTagline") {
             return value === true ? "enabled" : "disabled";
           }

@@ -7,10 +7,12 @@ import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 import { HeaderColor } from "../extensions/shared/header-color.ts";
 import {
   DEFAULT_HEADER_COLORS,
+  DEFAULT_TAGLINE,
   EMPTY_STARTUP_HEADER_CONFIG,
   loadStartupHeaderConfig,
   parseStartupHeaderConfig,
   resolveHeaderColorSettings,
+  resolveHeaderTagline,
   resolveHeaderTextSettings,
   resolveShowTagline,
   resolveShowTimeGreeting,
@@ -115,6 +117,9 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { general: { showTimeGreeting: "true" } },
     { showTagline: "true" },
     { general: { showTagline: "true" } },
+    { tagline: 123 },
+    { tagline: "line 1\nline 2" },
+    { general: { tagline: "line 1\nline 2" } },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -211,6 +216,40 @@ test("欢迎语也可以放在 general 中，并拒绝空文本", () => {
   });
   assert.throws(() => parseStartupHeaderConfig({ userName: "   " }));
   assert.throws(() => parseStartupHeaderConfig({ welcomeMessage: "line 1\nline 2" }));
+});
+
+test("tagline 支持自定义文本，空值回退到默认文本", () => {
+  const customConfig = parseStartupHeaderConfig({ tagline: "  My custom tagline  " });
+  const emptyConfig = parseStartupHeaderConfig({ tagline: "" });
+  const generalConfig = parseStartupHeaderConfig({ general: { tagline: "General tagline" } });
+  const emptyTopLevelConfig = parseStartupHeaderConfig({
+    tagline: "",
+    general: { tagline: "Ignored general tagline" },
+  });
+
+  assert.equal(resolveHeaderTagline(customConfig), "My custom tagline");
+  assert.equal(resolveHeaderTagline(emptyConfig), DEFAULT_TAGLINE);
+  assert.equal(resolveHeaderTagline(generalConfig), "General tagline");
+  assert.equal(resolveHeaderTagline(emptyTopLevelConfig), DEFAULT_TAGLINE);
+
+  const now = new Date(2026, 8, 17, 9, 0);
+  const customLines = renderHeaderLines(300, createTheme(), customConfig, {
+    piVersion: "0.85.1",
+    now,
+  });
+  const defaultLines = renderHeaderLines(300, createTheme(), emptyConfig, {
+    piVersion: "0.85.1",
+    now,
+  });
+
+  assert.ok(customLines.some((line) => line.includes("My custom tagline")));
+  assert.ok(!customLines.some((line) => line.includes("There are many agent harnesses,")));
+  assert.ok(defaultLines.some((line) => line.includes("There are many agent harnesses,")));
+  assert.ok(
+    defaultLines.some(
+      (line) => line.includes("but this one is ") && line.includes("yours") && line.includes("."),
+    ),
+  );
 });
 
 test("showTimeGreeting 控制问候语，并按本地小时生成文本", () => {
