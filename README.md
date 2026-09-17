@@ -23,13 +23,13 @@ It fits Pi's signature restraint perfectly, but after a while, it can start to f
 ### npm package
 
 ```bash
-pi install npm:pi-startup-header
+pi install npm:@smujaddid/pi-startup-header
 ```
 
 ### Git repository
 
 ```bash
-pi install git:github.com/EnderLiquid/pi-startup-header
+pi install git:github.com/smujaddid/pi-startup-header
 ```
 
 ## Configure from Pi
@@ -114,7 +114,7 @@ Changes made through `/startup-header` apply immediately. If you edit the JSON f
 
 A picture is worth a thousand words:
 
-![Pi Startup Header preview](https://fastly.jsdelivr.net/gh/EnderLiquid/pi-startup-header@main/assets/preview.png)
+![Pi Startup Header preview](https://fastly.jsdelivr.net/gh/smujaddid/pi-startup-header@main/assets/preview2.png)
 
 ## Requirements
 

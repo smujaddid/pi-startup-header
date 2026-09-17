@@ -23,13 +23,13 @@ Pi can explain its own features and look up its docs. Ask it how to use or exten
 ### npm package
 
 ```bash
-pi install npm:pi-startup-header
+pi install npm:@smujaddid/pi-startup-header
 ```
 
 ### Git repository
 
 ```bash
-pi install git:github.com/EnderLiquid/pi-startup-header
+pi install git:github.com/smujaddid/pi-startup-header
 ```
 
 ## 在 Pi 中配置
@@ -114,7 +114,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 一张图胜过千言万语：
 
-![Pi Startup Header 预览图](https://fastly.jsdelivr.net/gh/EnderLiquid/pi-startup-header@main/assets/preview.png)
+![Pi Startup Header 预览图](https://fastly.jsdelivr.net/gh/smujaddid/pi-startup-header@main/assets/preview2.png)
 
 ## 依赖
 

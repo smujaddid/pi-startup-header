@@ -1,10 +1,13 @@
 {
-  "name": "pi-startup-header",
-  "version": "0.4.0",
+  "name": "@smujaddid/pi-startup-header",
+  "version": "0.1.0",
   "description": "Theme-aware gradient ASCII startup header for the Pi coding agent.",
   "type": "module",
   "license": "MIT",
-  "author": "EnderLiquid",
+  "author": "Sibghatullah Mujaddid",
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -16,13 +19,14 @@
   "files": [
     "extensions",
     "README.md",
+    "README.zh-CN.md",
     "LICENSE"
   ],
   "exports": {
     ".": "./extensions/pi-startup-header.ts"
   },
   "pi": {
-    "image": "https://fastly.jsdelivr.net/gh/EnderLiquid/pi-startup-header@main/assets/cover.png",
+    "image": "https://fastly.jsdelivr.net/gh/smujaddid/pi-startup-header@main/assets/cover2.png",
     "extensions": [
       "./extensions/pi-startup-header.ts"
     ]
@@ -31,13 +35,13 @@
     "@earendil-works/pi-coding-agent": ">=0.84.0",
     "@earendil-works/pi-tui": ">=0.84.0"
   },
-  "homepage": "https://github.com/EnderLiquid/pi-startup-header#readme",
+  "homepage": "https://github.com/smujaddid/pi-startup-header#readme",
   "bugs": {
-    "url": "https://github.com/EnderLiquid/pi-startup-header/issues"
+    "url": "https://github.com/smujaddid/pi-startup-header/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EnderLiquid/pi-startup-header.git"
+    "url": "git+https://github.com/smujaddid/pi-startup-header.git"
   },
   "scripts": {
     "test": "tsx --test tests/*.test.ts",
