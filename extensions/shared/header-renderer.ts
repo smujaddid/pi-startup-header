@@ -287,14 +287,6 @@ function renderHeaderInfoLines(
           raw: `pi v${runtimeInfo.piVersion}`,
           styled: theme.bold(colors.textHighlight.paint(theme, `pi v${runtimeInfo.piVersion}`)),
         },
-        {
-          raw: showLabels ? " · provider: " : " · ",
-          styled: colors.textBase.paint(theme, showLabels ? " · provider: " : " · "),
-        },
-        {
-          raw: provider,
-          styled: colors.textHighlight.paint(theme, provider),
-        },
       ],
       width,
     ),
@@ -307,6 +299,14 @@ function renderHeaderInfoLines(
         {
           raw: model,
           styled: colors.textHighlight.paint(theme, model),
+        },
+        {
+          raw: showLabels ? " · provider: " : " · ",
+          styled: colors.textBase.paint(theme, showLabels ? " · provider: " : " · "),
+        },
+        {
+          raw: provider,
+          styled: colors.textHighlight.paint(theme, provider),
         },
         {
           raw: showLabels ? " · thinking: " : " · ",

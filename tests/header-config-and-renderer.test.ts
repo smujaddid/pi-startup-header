@@ -460,6 +460,12 @@ test("Header 显示 Pi 运行信息、欢迎语和本地时间", () => {
   assert.ok(lines.some((line) => line.includes("provider:") && line.includes("openai-codex")));
   assert.ok(lines.some((line) => line.includes("model:") && line.includes("gpt-5.6-luna")));
   assert.ok(lines.some((line) => line.includes("thinking:") && line.includes("medium")));
+  assert.ok(
+    lines.some(
+      (line) =>
+        line.includes("model:") && line.includes("provider:") && line.includes("thinking:"),
+    ),
+  );
   const welcomeLineIndex = lines.findIndex((line) =>
     line.includes(`Welcome, Ada! ${getTimeGreeting(now)}`),
   );
