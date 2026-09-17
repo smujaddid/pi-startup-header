@@ -120,6 +120,10 @@ A picture is worth a thousand words:
 
 This plugin requires Pi 0.84.0 or later.
 
+## Credits
+
+This project is a fork of [EnderLiquid/pi-startup-header](https://github.com/EnderLiquid/pi-startup-header). Thanks to the original author and contributors.
+
 ## License
 
 MIT License

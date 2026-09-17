@@ -120,6 +120,10 @@ pi install git:github.com/smujaddid/pi-startup-header
 
 本插件需要 Pi 0.84.0 或更高版本。
 
+## 致谢
+
+本项目 fork 自 [EnderLiquid/pi-startup-header](https://github.com/EnderLiquid/pi-startup-header)。感谢原作者及所有贡献者。
+
 ## 许可证
 
 MIT License
