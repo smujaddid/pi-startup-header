@@ -23,6 +23,7 @@ import {
   loadStartupHeaderConfig,
   parseStartupHeaderConfig,
   resolveHeaderTextSettings,
+  resolveHeaderTimeZone,
   resolveShowTagline,
   resolveShowTimeGreeting,
   type StartupHeaderConfig,
@@ -31,6 +32,7 @@ import { renderHeaderLines } from "./shared/header-renderer.ts";
 
 const SYSTEM_DEFAULT_LABEL = "(system default)";
 const DEFAULT_VALUE_LABEL = "(default)";
+const LOCAL_TIME_ZONE_LABEL = "(local time zone)";
 const COLOR_SETTING_IDS = ["logoGradientBase", "textBase", "textHighlight"] as const;
 type ColorSettingId = (typeof COLOR_SETTING_IDS)[number];
 type EditableSettingId =
@@ -38,6 +40,7 @@ type EditableSettingId =
   | "welcomeMessage"
   | "locale"
   | "tagline"
+  | "timeZone"
   | "dateStyle"
   | "timeStyle"
   | "showTimeGreeting"
@@ -145,6 +148,13 @@ function taglineDisplayValue(rawConfiguration: Record<string, unknown>): string 
   if (typeof value === "string" && value.trim().length > 0) return value.trim();
 
   return DEFAULT_VALUE_LABEL;
+}
+
+function timeZoneDisplayValue(rawConfiguration: Record<string, unknown>): string {
+  const value = getRawSetting(rawConfiguration, "timeZone");
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+
+  return LOCAL_TIME_ZONE_LABEL;
 }
 
 class TextSettingSubmenu extends Container {
@@ -357,6 +367,24 @@ export default function piStartupHeader(pi: ExtensionAPI) {
               ),
           },
           {
+            id: "timeZone",
+            label: "Time zone",
+            description: "IANA time zone such as UTC or America/New_York. Leave empty for local time.",
+            currentValue: timeZoneDisplayValue(draftConfiguration),
+            submenu: (_currentValue, done) =>
+              new TextSettingSubmenu(
+                theme,
+                "Time zone",
+                "Enter an IANA time zone such as UTC or America/New_York. Leave empty for local time.",
+                currentTextInputValue("timeZone"),
+                (value) => {
+                  const submittedValue = validateSetting("timeZone", value);
+                  if (submittedValue !== undefined) done(submittedValue);
+                },
+                () => done(undefined),
+              ),
+          },
+          {
             id: "dateStyle",
             label: "Date style",
             description: "Detail level for the local date.",
@@ -463,10 +491,10 @@ export default function piStartupHeader(pi: ExtensionAPI) {
         };
 
         function currentTextInputValue(
-          id: "userName" | "welcomeMessage" | "locale" | "tagline",
+          id: "userName" | "welcomeMessage" | "locale" | "tagline" | "timeZone",
         ): string {
-          if (id === "tagline") {
-            const value = getRawSetting(draftConfiguration, "tagline");
+          if (id === "tagline" || id === "timeZone") {
+            const value = getRawSetting(draftConfiguration, id);
             return typeof value === "string" ? value.trim() : "";
           }
 
@@ -530,6 +558,7 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             return colorDisplayValue(draftConfiguration, id as ColorSettingId);
           }
           if (id === "tagline") return taglineDisplayValue(draftConfiguration);
+          if (id === "timeZone") return timeZoneDisplayValue(draftConfiguration);
           if (id === "showTimeGreeting" || id === "showTagline") {
             return value === true ? "enabled" : "disabled";
           }

@@ -8,6 +8,7 @@ const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as c
 const HEADER_TEXT_KEYS = ["userName", "welcomeMessage", "locale"] as const;
 const HEADER_TAGLINE_KEYS = ["tagline"] as const;
 const HEADER_DATE_TIME_KEYS = ["dateStyle", "timeStyle"] as const;
+const HEADER_TIME_ZONE_KEYS = ["timeZone"] as const;
 const HEADER_DISPLAY_KEYS = ["showTimeGreeting", "showTagline"] as const;
 const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
 const GENERAL_CONFIGURATION_KEYS = [
@@ -15,6 +16,7 @@ const GENERAL_CONFIGURATION_KEYS = [
   ...HEADER_TEXT_KEYS,
   ...HEADER_TAGLINE_KEYS,
   ...HEADER_DATE_TIME_KEYS,
+  ...HEADER_TIME_ZONE_KEYS,
   ...HEADER_DISPLAY_KEYS,
 ] as const;
 const CONFIGURATION_KEYS = [
@@ -23,6 +25,7 @@ const CONFIGURATION_KEYS = [
   ...HEADER_TEXT_KEYS,
   ...HEADER_TAGLINE_KEYS,
   ...HEADER_DATE_TIME_KEYS,
+  ...HEADER_TIME_ZONE_KEYS,
   ...HEADER_DISPLAY_KEYS,
 ] as const;
 
@@ -33,6 +36,7 @@ type HeaderColorKey = (typeof HEADER_COLOR_KEYS)[number];
 type HeaderTextKey = (typeof HEADER_TEXT_KEYS)[number];
 type HeaderTaglineKey = (typeof HEADER_TAGLINE_KEYS)[number];
 type HeaderDateTimeKey = (typeof HEADER_DATE_TIME_KEYS)[number];
+type HeaderTimeZoneKey = (typeof HEADER_TIME_ZONE_KEYS)[number];
 
 type HeaderDisplaySettings = {
   showTimeGreeting?: boolean;
@@ -44,11 +48,13 @@ type HeaderColorSettings = Partial<Record<HeaderColorKey, HeaderColor>>;
 type HeaderTextSettings = Partial<Record<HeaderTextKey, string>>;
 type HeaderTaglineSettings = Partial<Record<HeaderTaglineKey, string>>;
 type HeaderDateTimeSettings = Partial<Record<HeaderDateTimeKey, DateTimeStyle>>;
+type HeaderTimeZoneSettings = Partial<Record<HeaderTimeZoneKey, string>>;
 type GeneralHeaderSettings =
   & HeaderColorSettings
   & HeaderTextSettings
   & HeaderTaglineSettings
   & HeaderDateTimeSettings
+  & HeaderTimeZoneSettings
   & HeaderDisplaySettings;
 export type EffectiveHeaderColorSettings = Required<HeaderColorSettings>;
 export type EffectiveHeaderTextSettings = HeaderTextSettings & HeaderDateTimeSettings;
@@ -66,6 +72,8 @@ export type StartupHeaderConfig = {
   tagline?: string;
   dateStyle?: DateTimeStyle;
   timeStyle?: DateTimeStyle;
+  /** Empty or omitted values use the local time zone. */
+  timeZone?: string;
   showTimeGreeting?: boolean;
   showTagline?: boolean;
   themeOverrides?: ThemeOverride[];
@@ -78,6 +86,7 @@ export const DEFAULT_WELCOME_MESSAGE = "Welcome, {name}!";
 export const DEFAULT_TAGLINE = "There are many agent harnesses,\nbut this one is yours.";
 export const DEFAULT_DATE_STYLE: DateTimeStyle = "full";
 export const DEFAULT_TIME_STYLE: DateTimeStyle = "long";
+export const DEFAULT_TIME_ZONE = "";
 export const DEFAULT_SHOW_TIME_GREETING = true;
 export const DEFAULT_SHOW_TAGLINE = true;
 
@@ -154,6 +163,23 @@ function parseTaglineSetting(value: unknown, path: string): string {
   return value.trim();
 }
 
+function parseTimeZoneSetting(value: unknown, path: string): string {
+  if (typeof value !== "string") {
+    throw new Error(`${path} must be a string`);
+  }
+
+  const timeZone = value.trim();
+  if (timeZone.length === 0) return DEFAULT_TIME_ZONE;
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone }).format();
+  } catch {
+    throw new Error(`${path} must be a valid IANA time zone`);
+  }
+
+  return timeZone;
+}
+
 function parseDateTimeStyle(value: unknown, path: string): DateTimeStyle {
   if (typeof value !== "string" || !DATE_TIME_STYLE_VALUES.includes(value as DateTimeStyle)) {
     throw new Error(`${path} must be one of: ${DATE_TIME_STYLE_VALUES.join(", ")}`);
@@ -188,6 +214,11 @@ function parseGeneralSettings(value: unknown, path: string): GeneralHeaderSettin
   for (const key of HEADER_DATE_TIME_KEYS) {
     if (Object.hasOwn(settings, key)) {
       result[key] = parseDateTimeStyle(settings[key], `${path}.${key}`);
+    }
+  }
+  for (const key of HEADER_TIME_ZONE_KEYS) {
+    if (Object.hasOwn(settings, key)) {
+      result[key] = parseTimeZoneSetting(settings[key], `${path}.${key}`);
     }
   }
   for (const key of HEADER_DISPLAY_KEYS) {
@@ -249,6 +280,11 @@ export function parseStartupHeaderConfig(value: unknown): StartupHeaderConfig {
     if (Object.hasOwn(config, key)) {
       const path = `configuration.${key}`;
       result[key] = parseDateTimeStyle(config[key], path);
+    }
+  }
+  for (const key of HEADER_TIME_ZONE_KEYS) {
+    if (Object.hasOwn(config, key)) {
+      result[key] = parseTimeZoneSetting(config[key], `configuration.${key}`);
     }
   }
   for (const key of HEADER_DISPLAY_KEYS) {
@@ -341,6 +377,11 @@ export function resolveHeaderTextSettings(
 export function resolveHeaderTagline(config: StartupHeaderConfig): string {
   const configuredTagline = config.tagline ?? config.general?.tagline;
   return configuredTagline || DEFAULT_TAGLINE;
+}
+
+export function resolveHeaderTimeZone(config: StartupHeaderConfig): string | undefined {
+  const configuredTimeZone = config.timeZone ?? config.general?.timeZone;
+  return configuredTimeZone || undefined;
 }
 
 export function resolveShowTimeGreeting(config: StartupHeaderConfig): boolean {

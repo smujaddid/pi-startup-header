@@ -71,6 +71,7 @@ Configuration file format:
   "userName": "Ada Lovelace",
   "welcomeMessage": "Welcome, {name}!",
   "tagline": "A custom tagline goes here",
+  "timeZone": "UTC",
   "locale": "en-GB",
   "dateStyle": "full",
   "timeStyle": "long",
@@ -91,7 +92,7 @@ Configuration file format:
 }
 ```
 
-`userName`, `welcomeMessage`, `tagline`, `locale`, `dateStyle`, `timeStyle`, `showTimeGreeting`, and `showTagline` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `tagline` replaces the default tagline text; an empty value falls back to the default two-line tagline. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. `showTimeGreeting` defaults to `true` and controls the local-time greeting (`Good morning!`, `Good afternoon!`, `Good evening!`, or `Good night!`). `showTagline` defaults to `true` and controls the tagline below the runtime information. The time zone is always the local time zone. Text and display settings can also be placed inside `general`; top-level values take precedence.
+`userName`, `welcomeMessage`, `tagline`, `locale`, `dateStyle`, `timeStyle`, `timeZone`, `showTimeGreeting`, and `showTagline` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `tagline` replaces the default tagline text; an empty value falls back to the default two-line tagline. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. `timeZone` accepts an IANA time zone such as `UTC`, `Asia/Makassar`, or `America/New_York`; when omitted or empty, the local time zone is used. `showTimeGreeting` defaults to `true` and controls the local-time greeting (`Good morning!`, `Good afternoon!`, `Good evening!`, or `Good night!`). `showTagline` defaults to `true` and controls the tagline below the runtime information. Text and display settings can also be placed inside `general`; top-level values take precedence.
 
 Each color can use one of the following value types:
 

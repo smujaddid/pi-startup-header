@@ -7,6 +7,7 @@ import {
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
   resolveHeaderTagline,
+  resolveHeaderTimeZone,
   resolveShowTagline,
   resolveShowTimeGreeting,
   type DateTimeStyle,
@@ -34,6 +35,8 @@ export type HeaderRuntimeInfo = {
   dateStyle?: DateTimeStyle;
   /** Optional time style override; configuration defaults to `long`. */
   timeStyle?: DateTimeStyle;
+  /** Optional IANA time zone override; omitted values use the local time zone. */
+  timeZone?: string;
 };
 
 const ANSI_PATTERN =
@@ -236,8 +239,12 @@ export function formatLocalDateTime(
   locale?: string,
   dateStyle: DateTimeStyle = DEFAULT_DATE_STYLE,
   timeStyle: DateTimeStyle = DEFAULT_TIME_STYLE,
+  timeZone?: string,
 ): string {
-  return date.toLocaleString(locale, { dateStyle, timeStyle });
+  const options: Intl.DateTimeFormatOptions = { dateStyle, timeStyle };
+  if (timeZone) options.timeZone = timeZone;
+
+  return date.toLocaleString(locale, options);
 }
 
 export function getTimeGreeting(date = new Date()): string {
@@ -326,18 +333,21 @@ function renderHeaderInfoLines(
     );
   }
 
+  const timeZone = runtimeInfo.timeZone ?? resolveHeaderTimeZone(config);
   const localDateTime = formatLocalDateTime(
     now,
     runtimeInfo.locale ?? textSettings.locale,
     runtimeInfo.dateStyle ?? textSettings.dateStyle,
     runtimeInfo.timeStyle ?? textSettings.timeStyle,
+    timeZone,
   );
+  const timeLabel = timeZone ? `time (${timeZone}): ` : "local time: ";
   lines.push(
     createCenteredStyledLine(
       [
         {
-          raw: "local time: ",
-          styled: colors.textBase.paint(theme, "local time: "),
+          raw: timeLabel,
+          styled: colors.textBase.paint(theme, timeLabel),
         },
         {
           raw: localDateTime,

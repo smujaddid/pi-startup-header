@@ -14,6 +14,7 @@ import {
   resolveHeaderColorSettings,
   resolveHeaderTagline,
   resolveHeaderTextSettings,
+  resolveHeaderTimeZone,
   resolveShowTagline,
   resolveShowTimeGreeting,
 } from "../extensions/shared/header-config.ts";
@@ -120,6 +121,9 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { tagline: 123 },
     { tagline: "line 1\nline 2" },
     { general: { tagline: "line 1\nline 2" } },
+    { timeZone: 123 },
+    { timeZone: "Not/AZone" },
+    { general: { timeZone: "Not/AZone" } },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -248,6 +252,45 @@ test("tagline 支持自定义文本，空值回退到默认文本", () => {
   assert.ok(
     defaultLines.some(
       (line) => line.includes("but this one is ") && line.includes("yours") && line.includes("."),
+    ),
+  );
+});
+
+test("timeZone 支持覆盖显示时区，空值使用本地时区", () => {
+  const now = new Date("2026-09-17T01:30:00.000Z");
+  const utcConfig = parseStartupHeaderConfig({
+    locale: "en-US",
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "UTC",
+  });
+  const newYorkConfig = parseStartupHeaderConfig({ timeZone: "America/New_York" });
+  const emptyConfig = parseStartupHeaderConfig({ timeZone: "" });
+
+  assert.equal(resolveHeaderTimeZone(utcConfig), "UTC");
+  assert.equal(resolveHeaderTimeZone(newYorkConfig), "America/New_York");
+  assert.equal(resolveHeaderTimeZone(emptyConfig), undefined);
+  assert.equal(
+    resolveHeaderTimeZone(parseStartupHeaderConfig({ general: { timeZone: "Asia/Makassar" } })),
+    "Asia/Makassar",
+  );
+
+  assert.equal(
+    formatLocalDateTime(now, "en-US", "short", "short", "UTC"),
+    now.toLocaleString("en-US", { dateStyle: "short", timeStyle: "short", timeZone: "UTC" }),
+  );
+  assert.notEqual(
+    formatLocalDateTime(now, "en-US", "short", "short", "UTC"),
+    formatLocalDateTime(now, "en-US", "short", "short", "America/New_York"),
+  );
+
+  const utcLines = renderHeaderLines(300, createTheme(), utcConfig, { piVersion: "0.85.1", now });
+  assert.ok(utcLines.some((line) => line.includes("time (UTC):")));
+  assert.ok(
+    utcLines.some(
+      (line) =>
+        line.includes("time (UTC):") &&
+        line.includes(formatLocalDateTime(now, "en-US", "short", "short", "UTC")),
     ),
   );
 });
