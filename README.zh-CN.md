@@ -74,6 +74,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
   "dateStyle": "full",
   "timeStyle": "long",
   "showTimeGreeting": true,
+  "showTagline": true,
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -89,7 +90,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 }
 ```
 
-`userName`、`welcomeMessage`、`locale`、`dateStyle`、`timeStyle` 和 `showTimeGreeting` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。`dateStyle` 和 `timeStyle` 可使用 `full`、`long`、`medium` 或 `short`，默认分别为 `full` 和 `long`。`showTimeGreeting` 默认为 `true`，用于控制根据本地时间显示的问候语（`Good morning!`、`Good afternoon!`、`Good evening!` 或 `Good night!`）。时区始终使用本地时区。文本配置也可以放在 `general` 中，顶层配置优先。
+`userName`、`welcomeMessage`、`locale`、`dateStyle`、`timeStyle`、`showTimeGreeting` 和 `showTagline` 均为可选配置；`welcomeMessage` 中的 `{name}` 会替换为配置的用户名。如果没有配置 `userName`，插件会在可用时使用当前本地账户名。`locale` 使用 BCP 47 格式，例如 `en-GB` 或 `de-DE`；省略时使用系统 locale。`dateStyle` 和 `timeStyle` 可使用 `full`、`long`、`medium` 或 `short`，默认分别为 `full` 和 `long`。`showTimeGreeting` 默认为 `true`，用于控制根据本地时间显示的问候语（`Good morning!`、`Good afternoon!`、`Good evening!` 或 `Good night!`）。`showTagline` 默认为 `true`，用于控制运行信息下方的两行标语。时区始终使用本地时区。文本和显示配置也可以放在 `general` 中，顶层配置优先。
 
 每个颜色可填写以下三类值之一：
 

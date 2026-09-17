@@ -23,6 +23,7 @@ import {
   loadStartupHeaderConfig,
   parseStartupHeaderConfig,
   resolveHeaderTextSettings,
+  resolveShowTagline,
   resolveShowTimeGreeting,
   type StartupHeaderConfig,
 } from "./shared/header-config.ts";
@@ -38,6 +39,7 @@ type EditableSettingId =
   | "dateStyle"
   | "timeStyle"
   | "showTimeGreeting"
+  | "showTagline"
   | ColorSettingId;
 
 const CONFIG_FILE_NAME = "pi-startup-header.json";
@@ -348,6 +350,13 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             currentValue: resolveShowTimeGreeting(parsedConfiguration) ? "enabled" : "disabled",
             values: ["enabled", "disabled"],
           },
+          {
+            id: "showTagline",
+            label: "Tagline",
+            description: "Show the tagline below the startup header information.",
+            currentValue: resolveShowTagline(parsedConfiguration) ? "enabled" : "disabled",
+            values: ["enabled", "disabled"],
+          },
           ...COLOR_SETTING_IDS.map((id): SettingItem => ({
             id,
             label:
@@ -393,7 +402,7 @@ export default function piStartupHeader(pi: ExtensionAPI) {
             const settingId = id as EditableSettingId;
             const settingValue = COLOR_SETTING_IDS.includes(settingId as ColorSettingId)
               ? parseColorInput(newValue)
-              : settingId === "showTimeGreeting"
+              : settingId === "showTimeGreeting" || settingId === "showTagline"
                 ? newValue === "enabled"
                 : (settingId === "userName" || settingId === "locale") && newValue.trim().length === 0
                   ? undefined
@@ -486,7 +495,9 @@ export default function piStartupHeader(pi: ExtensionAPI) {
           if (COLOR_SETTING_IDS.includes(id as ColorSettingId)) {
             return colorDisplayValue(draftConfiguration, id as ColorSettingId);
           }
-          if (id === "showTimeGreeting") return value === true ? "enabled" : "disabled";
+          if (id === "showTimeGreeting" || id === "showTagline") {
+            return value === true ? "enabled" : "disabled";
+          }
           if (value === undefined) return SYSTEM_DEFAULT_LABEL;
           return String(value);
         }

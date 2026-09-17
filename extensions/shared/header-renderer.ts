@@ -5,6 +5,7 @@ import {
   DEFAULT_TIME_STYLE,
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
+  resolveShowTagline,
   resolveShowTimeGreeting,
   type DateTimeStyle,
   type EffectiveHeaderColorSettings,
@@ -341,10 +342,13 @@ export function renderHeaderLines(
 ): string[] {
   const colors = resolveHeaderColorSettings(config, theme.name);
   const logoLines = renderLogoLines(width, theme, colors);
-  const taglineLines = renderTaglineLines(width, theme, colors);
+  const taglineLines = resolveShowTagline(config)
+    ? renderTaglineLines(width, theme, colors)
+    : [];
   const infoLines = renderHeaderInfoLines(width, theme, colors, config, runtimeInfo);
+  const taglineSeparator = taglineLines.length > 0 ? [""] : [];
 
-  return ["", ...logoLines, "", ...infoLines, "", ...taglineLines, ""].map((line) =>
+  return ["", ...logoLines, "", ...infoLines, ...taglineSeparator, ...taglineLines, ""].map((line) =>
     fitLineToWidth(line, width),
   );
 }

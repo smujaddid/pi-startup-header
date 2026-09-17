@@ -12,6 +12,7 @@ import {
   parseStartupHeaderConfig,
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
+  resolveShowTagline,
   resolveShowTimeGreeting,
 } from "../extensions/shared/header-config.ts";
 import {
@@ -112,6 +113,8 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { timeStyle: "invalid" },
     { showTimeGreeting: "true" },
     { general: { showTimeGreeting: "true" } },
+    { showTagline: "true" },
+    { general: { showTagline: "true" } },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -239,6 +242,28 @@ test("showTimeGreeting 控制问候语，并按本地小时生成文本", () => 
 
   assert.ok(enabledLines.some((line) => line.includes("Good morning!")));
   assert.ok(!disabledLines.some((line) => line.includes("Good morning!")));
+});
+
+test("showTagline 控制底部标语的显示", () => {
+  const now = new Date(2026, 8, 17, 9, 0);
+  const enabledLines = renderHeaderLines(300, createTheme(), parseStartupHeaderConfig({}), {
+    piVersion: "0.85.1",
+    now,
+  });
+  const disabledConfig = parseStartupHeaderConfig({ showTagline: false });
+  const disabledLines = renderHeaderLines(300, createTheme(), disabledConfig, {
+    piVersion: "0.85.1",
+    now,
+  });
+
+  assert.equal(resolveShowTagline(parseStartupHeaderConfig({})), true);
+  assert.equal(resolveShowTagline(disabledConfig), false);
+  assert.equal(
+    resolveShowTagline(parseStartupHeaderConfig({ general: { showTagline: false } })),
+    false,
+  );
+  assert.ok(enabledLines.some((line) => line.includes("There are many agent harnesses,")));
+  assert.ok(!disabledLines.some((line) => line.includes("There are many agent harnesses,")));
 });
 
 test("locale 配置控制日期格式，省略时使用系统 locale", () => {
