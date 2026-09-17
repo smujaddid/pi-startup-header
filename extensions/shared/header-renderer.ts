@@ -280,6 +280,7 @@ function renderHeaderInfoLines(
   ];
 
   if (welcomeText) {
+    lines.push("");
     lines.push(
       createCenteredStyledLine(
         [

@@ -34,7 +34,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ## Configure from Pi
 
-Use the `/startup-header` slash command to open the configuration in Pi's editor. The JSON is validated before it is saved, and changes apply immediately:
+Use the `/startup-header` slash command to open an interactive settings list, similar to Pi's `/settings` command. Use Enter/Space to cycle date and time styles; Enter on a text or color setting opens a single-line editor. Valid changes are saved and applied immediately:
 
 ```text
 /startup-header
@@ -56,7 +56,7 @@ From the moment Pi starts, the interface feels just a little different.
 
 ## Configuration
 
-To globally override the header's colors or text, create:
+The settings UI writes this file for you. To configure theme-specific color overrides, or to use the advanced JSON format directly, edit:
 
 ```text
 ~/.pi/agent/pi-startup-header.json
@@ -102,7 +102,7 @@ Each color field is resolved independently according to the following precedence
 - When no override matches, values from `general` are used; omitted `general` fields inherit the built-in defaults.
 - The built-in defaults use `accent` for the Logo gradient and normal tagline text, and `mdLink` for highlighted text.
 
-Run `/reload` after editing the configuration file to apply the change. If the JSON or configuration values are invalid, the plugin shows a warning at startup and falls back to the built-in defaults.
+Changes made through `/startup-header` apply immediately. If you edit the JSON file directly, run `/reload` afterward. If the JSON or configuration values are invalid, the plugin shows a warning at startup and falls back to the built-in defaults.
 
 ## Preview
 

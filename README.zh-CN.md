@@ -34,7 +34,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ## 在 Pi 中配置
 
-使用 `/startup-header` 斜杠命令在 Pi 编辑器中打开配置。保存前会校验 JSON，修改会立即生效：
+使用 `/startup-header` 斜杠命令打开类似 Pi `/settings` 的交互式设置列表。日期和时间样式可用 Enter/Space 循环切换；在文本或颜色设置上按 Enter 可打开单行编辑器。有效修改会立即保存并应用：
 
 ```text
 /startup-header
@@ -56,7 +56,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 
 ## 配置
 
-如需全局覆盖 header 的颜色或文本，请创建：
+设置界面会自动写入以下文件。如需配置主题专属颜色覆盖，或直接使用高级 JSON 格式，请编辑：
 
 ```text
 ~/.pi/agent/pi-startup-header.json
@@ -102,7 +102,7 @@ pi install git:github.com/EnderLiquid/pi-startup-header
 - 无命中的覆盖项时使用 `general` 配置，`general` 中省略的字段继承内置默认值。
 - 内置默认值中，Logo 渐变和普通标语文字使用 `accent`，高亮文字使用 `mdLink`。
 
-编辑配置文件后执行 `/reload` 即可生效。JSON 或配置值无效时，插件会显示警告，并回退到内置默认配置。
+通过 `/startup-header` 修改会立即生效。直接编辑 JSON 文件后请执行 `/reload`。JSON 或配置值无效时，插件会显示警告，并回退到内置默认配置。
 
 ## 预览
 
