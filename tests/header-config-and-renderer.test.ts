@@ -106,6 +106,8 @@ test("拒绝无效颜色、未知字段和重复主题覆盖", () => {
     { general: { textBase: "" } },
     { general: { selectedBg: "accent" } },
     { locale: "en_US" },
+    { dateStyle: "invalid" },
+    { timeStyle: "invalid" },
     {
       themeOverrides: [
         { theme: "duplicate", textBase: "accent" },
@@ -180,6 +182,8 @@ test("欢迎语配置支持用户名和 {name} 占位符", () => {
     userName: "Ada Lovelace",
     welcomeMessage: "Hello, {name}.",
     locale: undefined,
+    dateStyle: "full",
+    timeStyle: "long",
   });
 });
 
@@ -195,6 +199,8 @@ test("欢迎语也可以放在 general 中，并拒绝空文本", () => {
     userName: "Grace",
     welcomeMessage: "Welcome back, {name}!",
     locale: undefined,
+    dateStyle: "full",
+    timeStyle: "long",
   });
   assert.throws(() => parseStartupHeaderConfig({ userName: "   " }));
   assert.throws(() => parseStartupHeaderConfig({ welcomeMessage: "line 1\nline 2" }));
@@ -210,6 +216,29 @@ test("locale 配置控制日期格式，省略时使用系统 locale", () => {
 
   assert.ok(lines.some((line) => line.includes(formatLocalDateTime(now, "en-GB"))));
   assert.equal(resolveHeaderTextSettings(config).locale, "en-GB");
+});
+
+test("dateStyle 和 timeStyle 配置控制日期时间格式", () => {
+  const config = parseStartupHeaderConfig({
+    locale: "en-GB",
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+  const now = new Date("2026-09-17T01:30:00.000Z");
+  const lines = renderHeaderLines(300, createTheme(), config, {
+    piVersion: "0.85.1",
+    now,
+  });
+
+  assert.equal(resolveHeaderTextSettings(config).dateStyle, "short");
+  assert.equal(resolveHeaderTextSettings(config).timeStyle, "short");
+  assert.ok(
+    lines.some(
+      (line) =>
+        line.includes("local time:") &&
+        line.includes(formatLocalDateTime(now, "en-GB", "short", "short")),
+    ),
+  );
 });
 
 test("Header 显示 Pi 运行信息、欢迎语和本地时间", () => {
@@ -233,6 +262,10 @@ test("Header 显示 Pi 运行信息、欢迎语和本地时间", () => {
   assert.ok(lines.some((line) => line.includes("model:") && line.includes("gpt-5.6-luna")));
   assert.ok(lines.some((line) => line.includes("thinking:") && line.includes("medium")));
   assert.ok(lines.some((line) => line.includes("Welcome, Ada!")));
+  assert.equal(
+    formatLocalDateTime(now, "en-US"),
+    now.toLocaleString("en-US", { dateStyle: "full", timeStyle: "long" }),
+  );
   assert.ok(
     lines.some(
       (line) =>

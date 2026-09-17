@@ -30,6 +30,8 @@ const INITIAL_CONFIGURATION = JSON.stringify(
     userName: getDefaultUserName() ?? "Your name",
     welcomeMessage: "Welcome, {name}!",
     locale: "en-US",
+    dateStyle: "full",
+    timeStyle: "long",
     general: {
       logoGradientBase: "accent",
       textBase: "accent",
@@ -60,6 +62,8 @@ export default function piStartupHeader(pi: ExtensionAPI) {
           thinkingLevel: ctx.thinkingLevel,
           userName: textSettings.userName ?? getDefaultUserName(),
           locale: textSettings.locale,
+          dateStyle: textSettings.dateStyle,
+          timeStyle: textSettings.timeStyle,
         });
       },
       invalidate() {},

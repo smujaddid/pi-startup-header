@@ -1,8 +1,11 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import { paintRgb, type HeaderColor, type Rgb } from "./header-color.ts";
 import {
+  DEFAULT_DATE_STYLE,
+  DEFAULT_TIME_STYLE,
   resolveHeaderColorSettings,
   resolveHeaderTextSettings,
+  type DateTimeStyle,
   type EffectiveHeaderColorSettings,
   type StartupHeaderConfig,
 } from "./header-config.ts";
@@ -23,6 +26,10 @@ export type HeaderRuntimeInfo = {
   now?: Date;
   /** Optional locale override for deterministic rendering or user preference. */
   locale?: string;
+  /** Optional date style override; configuration defaults to `full`. */
+  dateStyle?: DateTimeStyle;
+  /** Optional time style override; configuration defaults to `long`. */
+  timeStyle?: DateTimeStyle;
 };
 
 const ANSI_PATTERN =
@@ -205,11 +212,13 @@ function renderTaglineLines(
   return [line1, line2];
 }
 
-export function formatLocalDateTime(date = new Date(), locale?: string): string {
-  return date.toLocaleString(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+export function formatLocalDateTime(
+  date = new Date(),
+  locale?: string,
+  dateStyle: DateTimeStyle = DEFAULT_DATE_STYLE,
+  timeStyle: DateTimeStyle = DEFAULT_TIME_STYLE,
+): string {
+  return date.toLocaleString(locale, { dateStyle, timeStyle });
 }
 
 function renderHeaderInfoLines(
@@ -287,6 +296,8 @@ function renderHeaderInfoLines(
   const localDateTime = formatLocalDateTime(
     runtimeInfo.now,
     runtimeInfo.locale ?? textSettings.locale,
+    runtimeInfo.dateStyle ?? textSettings.dateStyle,
+    runtimeInfo.timeStyle ?? textSettings.timeStyle,
   );
   lines.push(
     createCenteredStyledLine(

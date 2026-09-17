@@ -71,6 +71,8 @@ Configuration file format:
   "userName": "Ada Lovelace",
   "welcomeMessage": "Welcome, {name}!",
   "locale": "en-GB",
+  "dateStyle": "full",
+  "timeStyle": "long",
   "general": {
     "logoGradientBase": "accent",
     "textBase": "accent",
@@ -86,7 +88,7 @@ Configuration file format:
 }
 ```
 
-`userName`, `welcomeMessage`, and `locale` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. The time zone is always the local time zone. Text settings can also be placed inside `general`; top-level values take precedence.
+`userName`, `welcomeMessage`, `locale`, `dateStyle`, and `timeStyle` are optional. `{name}` in `welcomeMessage` is replaced with the configured name. If no `userName` is configured, the extension uses the local account name when available. `locale` is a BCP 47 locale such as `en-GB` or `de-DE`; when omitted, the system locale is used. `dateStyle` and `timeStyle` accept `full`, `long`, `medium`, or `short`; they default to `full` and `long`. The time zone is always the local time zone. Text settings can also be placed inside `general`; top-level values take precedence.
 
 Each color can use one of the following value types:
 

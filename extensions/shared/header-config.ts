@@ -6,19 +6,34 @@ import {
 
 const HEADER_COLOR_KEYS = ["logoGradientBase", "textBase", "textHighlight"] as const;
 const HEADER_TEXT_KEYS = ["userName", "welcomeMessage", "locale"] as const;
+const HEADER_DATE_TIME_KEYS = ["dateStyle", "timeStyle"] as const;
 const THEME_OVERRIDE_KEYS = ["theme", ...HEADER_COLOR_KEYS] as const;
-const GENERAL_CONFIGURATION_KEYS = [...HEADER_COLOR_KEYS, ...HEADER_TEXT_KEYS] as const;
-const CONFIGURATION_KEYS = ["general", "themeOverrides", ...HEADER_TEXT_KEYS] as const;
+const GENERAL_CONFIGURATION_KEYS = [
+  ...HEADER_COLOR_KEYS,
+  ...HEADER_TEXT_KEYS,
+  ...HEADER_DATE_TIME_KEYS,
+] as const;
+const CONFIGURATION_KEYS = [
+  "general",
+  "themeOverrides",
+  ...HEADER_TEXT_KEYS,
+  ...HEADER_DATE_TIME_KEYS,
+] as const;
 
+const DATE_TIME_STYLE_VALUES = ["full", "long", "medium", "short"] as const;
+
+export type DateTimeStyle = (typeof DATE_TIME_STYLE_VALUES)[number];
 type HeaderColorKey = (typeof HEADER_COLOR_KEYS)[number];
 type HeaderTextKey = (typeof HEADER_TEXT_KEYS)[number];
+type HeaderDateTimeKey = (typeof HEADER_DATE_TIME_KEYS)[number];
 
 export type HeaderColorConfig = Partial<Record<HeaderColorKey, HeaderColorConfigValue>>;
 type HeaderColorSettings = Partial<Record<HeaderColorKey, HeaderColor>>;
 type HeaderTextSettings = Partial<Record<HeaderTextKey, string>>;
-type GeneralHeaderSettings = HeaderColorSettings & HeaderTextSettings;
+type HeaderDateTimeSettings = Partial<Record<HeaderDateTimeKey, DateTimeStyle>>;
+type GeneralHeaderSettings = HeaderColorSettings & HeaderTextSettings & HeaderDateTimeSettings;
 export type EffectiveHeaderColorSettings = Required<HeaderColorSettings>;
-export type EffectiveHeaderTextSettings = HeaderTextSettings;
+export type EffectiveHeaderTextSettings = HeaderTextSettings & HeaderDateTimeSettings;
 type ThemeOverride = HeaderColorSettings & {
   theme: string;
 };
@@ -29,6 +44,8 @@ export type StartupHeaderConfig = {
   userName?: string;
   welcomeMessage?: string;
   locale?: string;
+  dateStyle?: DateTimeStyle;
+  timeStyle?: DateTimeStyle;
   themeOverrides?: ThemeOverride[];
 };
 
@@ -36,6 +53,8 @@ export const CONFIGURATION_WARNING =
   "Failed to load pi-startup-header configuration. Using default header settings.";
 
 export const DEFAULT_WELCOME_MESSAGE = "Welcome, {name}!";
+export const DEFAULT_DATE_STYLE: DateTimeStyle = "full";
+export const DEFAULT_TIME_STYLE: DateTimeStyle = "long";
 
 const DEFAULT_HEADER_COLOR_CONFIG = {
   logoGradientBase: "accent",
@@ -99,6 +118,14 @@ function parseLocaleSetting(value: unknown, path: string): string {
   return locale;
 }
 
+function parseDateTimeStyle(value: unknown, path: string): DateTimeStyle {
+  if (typeof value !== "string" || !DATE_TIME_STYLE_VALUES.includes(value as DateTimeStyle)) {
+    throw new Error(`${path} must be one of: ${DATE_TIME_STYLE_VALUES.join(", ")}`);
+  }
+
+  return value as DateTimeStyle;
+}
+
 function parseGeneralSettings(value: unknown, path: string): GeneralHeaderSettings {
   const settings = expectRecord(value, path);
   assertKnownKeys(settings, GENERAL_CONFIGURATION_KEYS, path);
@@ -115,6 +142,11 @@ function parseGeneralSettings(value: unknown, path: string): GeneralHeaderSettin
         key === "locale"
           ? parseLocaleSetting(settings[key], `${path}.${key}`)
           : parseTextSetting(settings[key], `${path}.${key}`);
+    }
+  }
+  for (const key of HEADER_DATE_TIME_KEYS) {
+    if (Object.hasOwn(settings, key)) {
+      result[key] = parseDateTimeStyle(settings[key], `${path}.${key}`);
     }
   }
 
@@ -157,6 +189,12 @@ export function parseStartupHeaderConfig(value: unknown): StartupHeaderConfig {
         key === "locale"
           ? parseLocaleSetting(config[key], path)
           : parseTextSetting(config[key], path);
+    }
+  }
+  for (const key of HEADER_DATE_TIME_KEYS) {
+    if (Object.hasOwn(config, key)) {
+      const path = `configuration.${key}`;
+      result[key] = parseDateTimeStyle(config[key], path);
     }
   }
 
@@ -233,5 +271,7 @@ export function resolveHeaderTextSettings(
     welcomeMessage:
       config.welcomeMessage ?? config.general?.welcomeMessage ?? DEFAULT_WELCOME_MESSAGE,
     locale: config.locale ?? config.general?.locale,
+    dateStyle: config.dateStyle ?? config.general?.dateStyle ?? DEFAULT_DATE_STYLE,
+    timeStyle: config.timeStyle ?? config.general?.timeStyle ?? DEFAULT_TIME_STYLE,
   };
 }
